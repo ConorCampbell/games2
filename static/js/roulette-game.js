@@ -2,12 +2,11 @@ function ID(id) {
     return document.getElementById(id);
 }
 
-let audio = new Audio("/static/img/wheel/tick.mp3"); // Create audio object and load tick.mp3 file.
+let audio = new Audio("static/sound/tick.mp3"); // Create audio object and load tick.mp3 file.
 
 // global variable to control sound:
 // TODO: needs to be fixed ..
 is_sound_allowed = "true"; 
-
 
 // TODO: this needs to be generic: load(name, file), play(name, volume) methods 
 // and should allow for overlapping sounds ?
@@ -790,6 +789,8 @@ class RouletteGame {
 
     }
 
+
+    // TODO: remove this bogus stuff
     calcBetEfficiency() {
         // Calculate the efficiency of the bets placed
         // based on the total bet and the pot value
@@ -893,3 +894,4 @@ class RouletteGame {
                 }, 8000); // Hide after 5 seconds
             }
 }
+

@@ -377,7 +377,7 @@ function Keyboard(id = "keyboard", keyEvent, enabled = true) {
   this.clickSound = function (){
     if (is_sound_allowed == "true"){
       if (!this.audio){
-          this.audio   = new Audio("/static/sound/click.wav")
+          this.audio   = new Audio("static/sound/click.wav")
       }
       this.audio.play();
     }
