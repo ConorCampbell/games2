@@ -499,13 +499,11 @@
 
 
         // --- Sound Effects ---
-        let baseDir = "/Users/conor/Documents/Python%20Scripts/NewSite/ff"
-        //let baseDir = "https://fatfinger.pythonanywhere.com"
 
-        const bombDropSound = new Audio(`${baseDir}/static/sound/bomb-dropping.mp3`);
+        const bombDropSound = new Audio(`static/sound/bomb-dropping.mp3`);
         bombDropSound.volume = 1; // Adjust volume to not be too loud
 
-        const explosionSound = new Audio(`${baseDir}/static/sound/explosion-8-bit.mp3`);
+        const explosionSound = new Audio(`sound/explosion-8-bit.mp3`);
         explosionSound.volume = 0.4;
 
         function playSound(sound) {
