@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plane Bombing Game</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Dark background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevent body scroll */
+        }
+        #game-container {
+            position: relative;
+            background-color: #334155; /* Darker background for game area */
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            width: 90%; /* Responsive width */
+            max-width: 800px; /* Max width for desktop */
+            height: 90vh; /* Responsive height */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            /* Added for 3D perspective */
+            perspective: 1000px; /* Defines the depth of the 3D scene */
+        }
+        #score-display {
+            background-color: #cbd5e1; /* Light gray */
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            color: #1a202c;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 10px;
+            z-index: 2; /* Ensure score is above map and canvas */
+            position: relative;
+        }
+
+        #map-canvas-container {
+            position: relative;
+            width: 100%;
+            flex-grow: 1; /* Allow container to grow and take available space */
+            border-radius: 10px;
+            overflow: hidden; /* Ensure map stays within bounds */
+            /* Added for 3D rotation */
+            transform: rotateX(45deg); /* Tilt the map 45 degrees back */
+            transform-origin: center bottom; /* Rotate from the bottom center */
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7); /* Add shadow for depth */
+        }
+
+        #leaflet-map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Behind canvas */
+        }
+        canvas {
+            background-color: transparent; /* Make canvas transparent to show map */
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Above map for drawing */
+            pointer-events: none; /* Crucial: Allows clicks to pass through to map underneath */
+        }
+
+        #game-input-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2; /* On top of canvas to capture events */
+        }
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            border-radius: 15px; /* Match game container radius */
+        }
+        .modal-content {
+            background-color: #f7fafc; /* White */
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            max-width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .modal-content h2 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            color: #2d3748;
+        }
+        .modal-content p {
+            margin-bottom: 10px;
+            color: #4a5568;
+        }
+        .modal-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .modal-buttons button {
+            background-color: #4299e1; /* Blue */
+            color: white;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .modal-buttons button:hover {
+            background-color: #3182ce; /* Darker blue */
+            transform: translateY(-2px);
+        }
+        .modal-buttons button:active {
+            transform: translateY(0);
+            box-shadow: none;
+        }
+        .llm-output {
+            background-color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-style: italic;
+            color: #2d3748;
+            text-align: left;
+            max-width: 500px;
+            width: 100%;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Ensure the hidden class truly hides elements */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Custom marker icon for targets */
+        .target-icon {
+            background-color: #10b981; /* Green */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: white;
+            border: 2px solid #047857;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        /* Custom Zoom Controls Styling */
+        .custom-zoom-button {
+            background-color: rgba(45, 55, 72, 0.8); /* Semi-transparent dark gray */
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            transition: background-color 0.2s;
+        }
+        .custom-zoom-button:hover {
+            background-color: rgba(74, 85, 104, 0.9); /* Lighter on hover */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-gray-900">
+    <div id="game-container" class="relative">
+        <div id="score-display">Score: 0 | Hits: 0 | Misses: 0</div>
+        <div id="map-canvas-container">
+            <div id="leaflet-map"></div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="game-input-overlay"></div>
+
+            <!-- Custom Zoom Controls -->
+            <div id="custom-zoom-controls" class="absolute  bottom-2 -translate-y-1/2 flex flex-col items-center space-y-2" style="z-index: 3;">
+                <button id="custom-zoom-out" class="custom-zoom-button text-white font-bold rounded-full w-12 h-12 flex items-center justify-center text-2xl shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                </button>
+                <button id="custom-zoom-in" class="custom-zoom-button text-white font-bold rounded-full w-12 h-12 flex items-center justify-center text-2xl shadow-lg">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Area Selection Modal -->
+        <div id="areaSelectionModal" class="modal">
+            <div class="modal-content">
+                <h2>Select Your Target Area</h2>
+                <p id="areaSelectionDescription">Choose an area to fly over and bomb targets. Longer maps offer more challenges and potential points!</p>
+                <div id="areaSelectionButtonsContainer" class="modal-buttons grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Buttons will be dynamically loaded here -->
+                </div>
+
+                <div id="actionButtonsContainer" class="flex flex-col items-center gap-4 hidden">
+                    <button id="getBriefingButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg mt-4">
+                        Get Mission Briefing ✨ <span id="briefingLoading" class="hidden loading-spinner"></span>
+                    </button>
+                    <div id="missionBriefingOutput" class="llm-output hidden"></div>
+
+                    <button id="finalStartGameButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mt-4">
+                        Start Mission!
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div id="gameOverModal" class="modal hidden">
+            <div class="modal-content">
+                <h2 id="gameOverTitle">Game Over!</h2>
+                <p id="finalScore">Final Score: 0</p>
+                <p id="proximityResults">Hits: 0 | Misses: 0</p>
+                <button id="getDebriefingButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg mt-4">
+                    Get Debriefing ✨ <span id="debriefingLoading" class="hidden loading-spinner"></span>
+                    </button>
+                <div id="debriefingOutput" class="llm-output hidden"></div>
+                <div class="modal-buttons mt-4">
+                    <button id="restartGameButton">Play Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameInputOverlay = document.getElementById('game-input-overlay');
+        const scoreDisplay = document.getElementById('score-display');
+        const areaSelectionModal = document.getElementById('areaSelectionModal');
+        const areaSelectionButtonsContainer = document.getElementById('areaSelectionButtonsContainer');
+        const actionButtonsContainer = document.getElementById('actionButtonsContainer');
+        const getBriefingButton = document.getElementById('getBriefingButton');
+        const briefingLoadingSpinner = document.getElementById('briefingLoading');
+        const missionBriefingOutput = document.getElementById('missionBriefingOutput');
+        const finalStartGameButton = document.getElementById('finalStartGameButton');
+
+        const gameOverModal = document.getElementById('gameOverModal');
+        const gameOverTitle = document.getElementById('gameOverTitle');
+        const finalScoreDisplay = document.getElementById('finalScore');
+        const proximityResultsDisplay = document.getElementById('proximityResults');
+        const getDebriefingButton = document.getElementById('getDebriefingButton');
+        const debriefingLoadingSpinner = document.getElementById('debriefingLoading');
+        const debriefingOutput = document.getElementById('debriefingOutput');
+        const restartGameButton = document.getElementById('restartGameButton');
+
+        let animationFrameId;
+        let map; // Global Leaflet map instance
+
+        // Touch control variables
+        let touchStartInitialY = 0;
+        let touchLastMoveY = 0;
+        let touchCurrentY = 0;
+        let touchIsActive = false;
+
+        const TOUCH_MOVE_THRESHOLD = 5;
+        const TOUCH_TAP_MAX_DURATION = 300;
+        let touchStartTime = 0;
+
+        // Game State Variables
+        const GAME_STATES = { START: 'start', PLAYING: 'playing', GAME_OVER: 'gameOver' };
+        let currentGameState = GAME_STATES.START;
+
+        // Game Constants
+        const INITIAL_PLANE_WIDTH = 45;
+        const INITIAL_PLANE_HEIGHT = 20;
+        const INITIAL_BOMB_WIDTH = 8;
+        const INITIAL_BOMB_HEIGHT = 16;
+        const PLANE_SPEED_Y = 5;
+        const BOMB_GRAVITY = 0.05;
+        const MAP_SCROLL_SPEED_METERS_PER_FRAME = 10;
+        const BASE_GROUND_OFFSET_Y = 100;
+        let dynamicGroundOffsetY = BASE_GROUND_OFFSET_Y;
+        const EXPLOSION_DURATION = 50;
+        const PLANE_TILT_MAX_ANGLE = 5 * (Math.PI / 180);
+        const PLANE_TILT_SPEED_FACTOR = 0.5;
+
+        // Game Objects
+        let plane = { x: 100, y: 0, width: INITIAL_PLANE_WIDTH, height: INITIAL_PLANE_HEIGHT, tiltAngle: 0, targetTiltAngle: 0 };
+        let bombs = [];
+        let activeTargets = [];
+        let lastTargetLng = -Infinity; // To store the longitude of the rightmost target
+
+        let BASE_ZOOM_FOR_GROUND_OFFSET;
+        let planeGeoLocation;
+
+        let explosions = [];
+
+        let score = 0;
+        let hits = 0;
+        let misses = 0;
+        let mapScrollXProgress = 0;
+        // totalMapLength is no longer used for game end condition, but kept for area description
+        let totalMapLength = 0;
+        let selectedGameArea = null;
+
+        // Area Definitions
+        const gameAreas = [
+            { name: "Green Valley", description: "A short, easy flight over gentle hills, testing your precision.", mapLength: 2000, fixedLatitude: 34.0000, initialCenterLng: -120.0000, zoom: 15, targetLatLngs: [ { lat: 34.0050, lng: -119.9800, radiusMeters: 150, basePoints: 100 }, { lat: 33.9950, lng: -119.9600, radiusMeters: 200, basePoints: 150 }, { lat: 34.0080, lng: -119.9400, radiusMeters: 100, basePoints: 80 }, { lat: 33.9920, lng: -119.9200, radiusMeters: 250, basePoints: 120 }, { lat: 34.0030, lng: -119.9000, radiusMeters: 180, basePoints: 110 } ] },
+            { name: "Rocky Peaks", description: "Moderate terrain with scattered targets amidst challenging peaks.", mapLength: 3500, fixedLatitude: 39.7000, initialCenterLng: -105.5000, longitudinalSpan: 0.15, zoom: 13, targetLatLngs: [ { lat: 39.7100, lng: -105.4800, radiusMeters: 120, basePoints: 120 }, { lat: 39.6900, lng: -105.4500, radiusMeters: 300, basePoints: 180 }, { lat: 39.7050, lng: -105.4200, radiusMeters: 160, basePoints: 100 }, { lat: 39.6850, lng: -105.3900, radiusMeters: 280, basePoints: 150 }, { lat: 39.7150, lng: -105.3600, radiusMeters: 190, basePoints: 130 }, { lat: 39.6980, lng: -105.3300, radiusMeters: 220, basePoints: 140 } ] },
+            { name: "Desert Sands", description: "Vast, open area. Targets can be elusive in the swirling sands.", mapLength: 5000, fixedLatitude: 33.5000, initialCenterLng: -113.0000, longitudinalSpan: 0.2, zoom: 12, targetLatLngs: [ { lat: 33.5100, lng: -112.9700, radiusMeters: 170, basePoints: 130 }, { lat: 33.4900, lng: -112.9400, radiusMeters: 350, basePoints: 200 }, { lat: 33.5050, lng: -112.9100, radiusMeters: 110, basePoints: 110 }, { lat: 33.4850, lng: -112.8800, radiusMeters: 290, basePoints: 160 }, { lat: 33.5150, lng: -112.8500, radiusMeters: 200, basePoints: 140 }, { lat: 33.4950, lng: -112.8200, radiusMeters: 320, basePoints: 190 }, { lat: 33.5080, lng: -112.7900, radiusMeters: 140, basePoints: 120 } ] },
+            { name: "Urban Sprawl", description: "Dense city, many targets but challenging to navigate.", mapLength: 6000, fixedLatitude: 40.7500, initialCenterLng: -74.0500, longitudinalSpan: 0.1, zoom: 14, targetLatLngs: [ { lat: 40.7550, lng: -74.0200, radiusMeters: 100, basePoints: 150 }, { lat: 40.7450, lng: -74.0000, radiusMeters: 150, basePoints: 120 }, { lat: 40.7600, lng: -73.9800, radiusMeters: 120, basePoints: 130 }, { lat: 40.7400, lng: -73.9600, radiusMeters: 180, basePoints: 110 }, { lat: 40.7580, lng: -73.9400, radiusMeters: 110, basePoints: 140 }, { lat: 40.7480, lng: -73.9200, radiusMeters: 160, basePoints: 125 }, { lat: 40.7620, lng: -73.9000, radiusMeters: 130, basePoints: 135 }, { lat: 40.7520, lng: -73.8800, radiusMeters: 190, basePoints: 115 } ] },
+            { name: "Frozen Tundra", description: "Long and cold. Patience and precision are key in this icy expanse.", mapLength: 7500, fixedLatitude: 64.7000, initialCenterLng: -150.0000, longitudinalSpan: 0.3, zoom: 10, targetLatLngs: [ { lat: 64.7100, lng: -149.9500, radiusMeters: 200, basePoints: 150 }, { lat: 64.6900, lng: -149.9000, radiusMeters: 400, basePoints: 220 }, { lat: 64.7050, lng: -149.8500, radiusMeters: 180, basePoints: 140 }, { lat: 64.6850, lng: -149.8000, radiusMeters: 350, basePoints: 190 }, { lat: 64.7150, lng: -149.7500, radiusMeters: 220, basePoints: 160 }, { lat: 64.6980, lng: -149.7000, radiusMeters: 380, basePoints: 200 }, { lat: 64.7080, lng: -149.6500, radiusMeters: 210, basePoints: 155 }, { lat: 64.6920, lng: -149.6000, radiusMeters: 390, basePoints: 210 } ] },
+            { name: "Volcano Alley", description: "Treacherous and long. High reward for conquering fiery landscapes.", mapLength: 9000, fixedLatitude: -8.0000, initialCenterLng: 111.5000, longitudinalSpan: 0.4, zoom: 11, targetLatLngs: [ { lat: -7.9900, lng: 111.5500, radiusMeters: 250, basePoints: 180 }, { lat: -8.0100, lng: 111.6000, radiusMeters: 450, basePoints: 250 }, { lat: -7.9850, lng: 111.6500, radiusMeters: 220, basePoints: 160 }, { lat: -8.0050, lng: 111.7000, radiusMeters: 380, basePoints: 210 }, { lat: -7.9920, lng: 111.7500, radiusMeters: 300, basePoints: 190 }, { lat: -8.0120, lng: 111.8000, radiusMeters: 420, basePoints: 240 }, { lat: -7.9880, lng: 111.8500, radiusMeters: 200, basePoints: 150 }, { lat: -8.0080, lng: 111.9000, radiusMeters: 400, basePoints: 220 }, { lat: -7.9950, lng: 111.9500, radiusMeters: 350, basePoints: 200 } ] },
+            { name: "The Gauntlet", description: "Extreme length and target density. For pros only! The ultimate test.", mapLength: 32000, fixedLatitude: 51.5000, initialCenterLng: -0.2000, longitudinalSpan: 0.15, zoom: 13, targetLatLngs: [ { lat: 51.5020, lng: -0.1900, radiusMeters: 100, basePoints: 200 }, { lat: 51.4980, lng: -0.1800, radiusMeters: 180, basePoints: 180 }, { lat: 51.5030, lng: -0.1700, radiusMeters: 130, basePoints: 190 }, { lat: 51.4970, lng: -0.1600, radiusMeters: 220, basePoints: 170 }, { lat: 51.5010, lng: -0.1500, radiusMeters: 150, basePoints: 195 }, { lat: 51.4960, lng: -0.1400, radiusMeters: 250, basePoints: 165 }, { lat: 51.5040, lng: -0.1300, radiusMeters: 170, basePoints: 188 }, { lat: 51.4990, lng: -0.1200, radiusMeters: 280, basePoints: 162 }, { lat: 51.5050, lng: -0.1100, radiusMeters: 190, basePoints: 192 }, { lat: 51.4950, lng: -0.1000, radiusMeters: 300, basePoints: 168 }, { lat: 51.5000, lng: -0.0900, radiusMeters: 200, basePoints: 185 }, { lat: 51.4900, lng: -0.0800, radiusMeters: 320, basePoints: 158 }, { lat: 51.4850, lng: -0.0700, radiusMeters: 350, basePoints: 150 } ] }
+        ];
+
+        // --- Input Handling ---
+        let keysPressed = {};
+        document.addEventListener('keydown', (e) => {
+            if (currentGameState === GAME_STATES.PLAYING) {
+                // Prevent default scrolling behavior for arrow keys and spacebar
+                if (['ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) { e.preventDefault(); }
+                if (e.code === 'Space' && !keysPressed['Space']) {
+                    // Limit bombs to 3 at a time for strategic drops
+                    if (bombs.length < 3) {
+                        bombs.push({ x: plane.x + plane.width / 2 - INITIAL_BOMB_WIDTH / 2, y: plane.y + plane.height, width: INITIAL_BOMB_WIDTH, height: INITIAL_BOMB_HEIGHT, velocityY: 0 });
+                    }
+                }
+            }
+            keysPressed[e.code] = true;
+        });
+        document.addEventListener('keyup', (e) => { keysPressed[e.code] = false; });
+
+        // Touch event listeners for mobile input
+        gameInputOverlay.addEventListener('touchstart', (e) => {
+            // Temporarily disable pointer events to determine if the touch is on a Leaflet control
+            gameInputOverlay.style.pointerEvents = 'none';
+            const targetElement = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+            gameInputOverlay.style.pointerEvents = 'auto'; // Re-enable pointer events
+
+            // If the touch is on a Leaflet control or custom zoom button, do not process as game input
+            if (targetElement && (targetElement.closest('.leaflet-control') || targetElement.closest('.custom-zoom-button'))) {
+                touchIsActive = false; // Mark touch as inactive for game control
+                return;
+            }
+
+            // Only process if in playing state and a single touch
+            if (currentGameState === GAME_STATES.PLAYING && e.touches.length === 1) {
+                touchStartInitialY = e.touches[0].pageY; // Record initial Y position
+                touchLastMoveY = e.touches[0].pageY;    // Initialize last move Y
+                touchCurrentY = e.touches[0].pageY;     // Initialize current Y
+                touchIsActive = true;                   // Activate touch control flag
+                touchStartTime = Date.now();            // Record touch start time for tap detection
+                e.preventDefault();                     // Prevent default touch behaviors like scrolling
+            }
+        });
+
+        gameInputOverlay.addEventListener('touchmove', (e) => {
+            // Temporarily disable pointer events to determine if the touch is on a Leaflet control
+            gameInputOverlay.style.pointerEvents = 'none';
+            const targetElement = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY);
+            gameInputOverlay.style.pointerEvents = 'auto'; // Re-enable pointer events
+
+            // If the touch is on a Leaflet control or custom zoom button, do not process as game input
+            if (targetElement && (targetElement.closest('.leaflet-control') || targetElement.closest('.custom-zoom-button'))) {
+                touchIsActive = false; // Mark touch as inactive for game control
+                return;
+            }
+
+            // Only process if in playing state, a single touch, and touch is active for game
+            if (currentGameState === GAME_STATES.PLAYING && e.touches.length === 1 && touchIsActive) {
+                touchCurrentY = e.touches[0].pageY; // Update current Y position
+                e.preventDefault();                 // Prevent default touch behaviors
+            }
+        });
+
+        gameInputOverlay.addEventListener('touchend', (e) => {
+            // Get client coordinates, handling both touch and mouse for robustness
+            const clientX = e.changedTouches[0] ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches[0] ? e.changedTouches[0].clientY : e.clientY;
+
+            // Temporarily disable pointer events to determine if the touch is on a Leaflet control
+            gameInputOverlay.style.pointerEvents = 'none';
+            const targetElement = document.elementFromPoint(clientX, clientY);
+            gameInputOverlay.style.pointerEvents = 'auto'; // Re-enable pointer events
+
+            const wasTouchActiveForGame = touchIsActive; // Store state before resetting
+            const touchDuration = Date.now() - touchStartTime; // Calculate touch duration
+            const finalTouchYPosition = e.changedTouches[0] ? e.changedTouches[0].pageY : touchCurrentY;
+            const totalTouchMovement = Math.abs(finalTouchYPosition - touchStartInitialY);
+
+            // Reset touch state variables
+            touchIsActive = false;
+            touchStartInitialY = 0;
+            touchLastMoveY = 0;
+            touchCurrentY = 0;
+            touchStartTime = 0;
+
+            // Check if it was a tap (minimal movement, short duration) to drop a bomb
+            if (currentGameState === GAME_STATES.PLAYING && wasTouchActiveForGame) {
+                if (totalTouchMovement < TOUCH_MOVE_THRESHOLD && touchDuration < TOUCH_TAP_MAX_DURATION) {
+                    if (bombs.length < 3) { // Limit bombs
+                        bombs.push({ x: plane.x + plane.width / 2 - INITIAL_BOMB_WIDTH / 2, y: plane.y + plane.height, width: INITIAL_BOMB_WIDTH, height: INITIAL_BOMB_HEIGHT, velocityY: 0 });
+                    }
+                }
+            }
+        });
+
+        // Click listener for bomb dropping (for desktop)
+        gameInputOverlay.addEventListener('click', (e) => {
+            // Temporarily disable pointer events to determine if the click is on a Leaflet control
+            gameInputOverlay.style.pointerEvents = 'none';
+            const targetElement = document.elementFromPoint(e.clientX, e.clientY);
+            gameInputOverlay.style.pointerEvents = 'auto'; // Re-enable pointer events
+
+            // If the click is on a Leaflet control or custom zoom button, do not process as game input
+            if (targetElement && (targetElement.closest('.leaflet-control') || targetElement.closest('.custom-zoom-button'))) {
+                return;
+            }
+
+            if (currentGameState === GAME_STATES.PLAYING) {
+                if (bombs.length < 3) { // Limit bombs
+                    bombs.push({ x: plane.x + plane.width / 2 - INITIAL_BOMB_WIDTH / 2, y: plane.y + plane.height, width: INITIAL_BOMB_WIDTH, height: INITIAL_BOMB_HEIGHT, velocityY: 0 });
+                }
+            }
+        });
+
+        /**
+         * Calls the Gemini API to generate text based on a prompt.
+         * Displays the output in the specified element and manages a loading spinner.
+         * @param {string} prompt - The text prompt for the API.
+         * @param {HTMLElement} outputElement - The HTML element to display the API response.
+         * @param {HTMLElement} loadingSpinnerElement - The HTML element for the loading spinner.
+         */
+        async function callGeminiAPI(prompt, outputElement, loadingSpinnerElement) {
+            outputElement.classList.add('hidden'); // Hide previous output
+            outputElement.textContent = ''; // Clear previous output
+            loadingSpinnerElement.classList.remove('hidden'); // Show loading spinner
+            try {
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+                const apiKey = ""; // API key is provided by the Canvas environment
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                // Check for valid response structure
+                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    outputElement.textContent = text;
+                    outputElement.classList.remove('hidden'); // Show the output
+                } else {
+                    outputElement.textContent = "Failed to get a response from Gemini.";
+                    outputElement.classList.remove('hidden'); // Show the output with error
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                outputElement.textContent = `Error: ${error.message}. Please try again.`;
+                outputElement.classList.remove('hidden'); // Show the output with error
+            } finally {
+                loadingSpinnerElement.classList.add('hidden'); // Hide loading spinner
+            }
+        }
+
+        /**
+         * Initializes the game state, UI, and event listeners.
+         * This function is called on window load and when restarting the game.
+         */
+        function initGame() {
+            // Hide all modals initially
+            hideModal(areaSelectionModal);
+            hideModal(gameOverModal);
+
+            // Set canvas and overlay dimensions to match their container
+            const mapCanvasContainer = document.getElementById('map-canvas-container');
+            canvas.width = mapCanvasContainer.clientWidth;
+            canvas.height = mapCanvasContainer.clientHeight;
+            gameInputOverlay.style.width = mapCanvasContainer.clientWidth + 'px';
+            gameInputOverlay.style.height = mapCanvasContainer.clientHeight + 'px';
+
+            // Reset plane position and tilt
+            plane.y = canvas.height / 2 - plane.height / 2;
+            plane.tiltAngle = 0;
+            plane.targetTiltAngle = 0;
+
+            // Clear and hide mission briefing related elements
+            missionBriefingOutput.textContent = '';
+            missionBriefingOutput.classList.add('hidden');
+            briefingLoadingSpinner.classList.add('hidden');
+            actionButtonsContainer.classList.add('hidden'); // Hide briefing/start game buttons
+
+            // Reset selected area button styles
+            areaSelectionButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('bg-green-500', 'hover:bg-green-600'));
+            // Reset area description
+            document.getElementById('areaSelectionDescription').textContent = "Choose an area to fly over and bomb targets. Longer maps offer more challenges and potential points!";
+
+            // Render the game area selection buttons
+            renderAreaSelection();
+            showModal(areaSelectionModal); // Show the area selection modal
+
+            currentGameState = GAME_STATES.START; // Set game state to start
+
+            // Event listener for restarting the game
+            restartGameButton.onclick = () => {
+                hideModal(gameOverModal); // Hide game over modal
+                debriefingOutput.textContent = ''; // Clear debriefing output
+                debriefingOutput.classList.add('hidden');
+                initGame(); // Re-initialize the game
+            };
+
+            // Event listener for getting mission briefing from Gemini API
+            getBriefingButton.onclick = () => {
+                if (selectedGameArea) {
+                    const prompt = `Generate a short, creative, and dramatic mission briefing for a bombing run over a game area named '${selectedGameArea.name}' described as '${selectedGameArea.description}'. Focus on the challenge and objective. Keep it under 100 words.`;
+                    callGeminiAPI(prompt, missionBriefingOutput, briefingLoadingSpinner);
+                } else {
+                    missionBriefingOutput.textContent = "Please select an area first to get a briefing.";
+                    missionBriefingOutput.classList.remove('hidden');
+                }
+            };
+
+            // Event listener for finally starting the game after area selection
+            finalStartGameButton.onclick = () => {
+                if (selectedGameArea) {
+                    const areaIndex = gameAreas.findIndex(area => area.name === selectedGameArea.name);
+                    startGame(areaIndex);
+                }
+            };
+
+            // Responsive canvas and map resizing
+            window.addEventListener('resize', () => {
+                const mcContainer = document.getElementById('map-canvas-container');
+                canvas.width = mcContainer.clientWidth;
+                canvas.height = mcContainer.clientHeight;
+                gameInputOverlay.style.width = mcContainer.clientWidth + 'px';
+                gameInputOverlay.style.height = mcContainer.clientHeight + 'px';
+                if (map) { map.invalidateSize(); } // Invalidate Leaflet map size on window resize
+                plane.y = Math.min(Math.max(0, plane.y), canvas.height - plane.height); // Keep plane within bounds
+            });
+        }
+
+        /**
+         * Renders the buttons for selecting game areas in the modal.
+         */
+        function renderAreaSelection() {
+            areaSelectionButtonsContainer.innerHTML = ''; // Clear existing buttons
+            gameAreas.forEach((area, index) => {
+                const button = document.createElement('button');
+                button.textContent = `${area.name} (${(area.mapLength / 100).toFixed(1)}km)`; // Display name and length
+                button.title = area.description; // Tooltip for description
+                button.onclick = () => {
+                    selectedGameArea = area; // Set the selected game area
+                    // Remove selected styling from all buttons
+                    areaSelectionButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('bg-green-500', 'hover:bg-green-600'));
+                    // Add selected styling to the clicked button
+                    button.classList.add('bg-green-500', 'hover:bg-green-600');
+                    document.getElementById('areaSelectionDescription').textContent = `You've selected: ${area.name}. ${area.description}`;
+                    // Clear and hide briefing output when a new area is selected
+                    missionBriefingOutput.textContent = '';
+                    missionBriefingOutput.classList.add('hidden');
+                    actionButtonsContainer.classList.remove('hidden'); // Show briefing/start game buttons
+                };
+                areaSelectionButtonsContainer.appendChild(button); // Add button to container
+            });
+        }
+
+        /**
+         * Starts the game with the selected area.
+         * @param {number} areaIndex - The index of the selected game area in `gameAreas` array.
+         */
+        function startGame(areaIndex) {
+            hideModal(areaSelectionModal); // Hide the area selection modal
+            currentGameState = GAME_STATES.PLAYING; // Set game state to playing
+
+            // Reset game variables
+            score = 0; hits = 0; misses = 0;
+            mapScrollXProgress = 0;
+            bombs = []; activeTargets = []; explosions = [];
+            plane.tiltAngle = 0; plane.targetTiltAngle = 0;
+            plane.width = INITIAL_PLANE_WIDTH; plane.height = INITIAL_PLANE_HEIGHT;
+            updateScoreDisplay();
+
+            selectedGameArea = gameAreas[areaIndex];
+            totalMapLength = selectedGameArea.mapLength; // Still used for description, not end condition
+            plane.x = canvas.width / 5; // Initial horizontal position of the plane
+
+            BASE_ZOOM_FOR_GROUND_OFFSET = selectedGameArea.zoom;
+
+            // Initialize or re-initialize Leaflet map
+            if (map) { map.remove(); } // Remove existing map if any
+            map = L.map('leaflet-map', {
+                zoomControl: false, // Disable default zoom control
+                attributionControl: false // Disable default attribution
+            }).setView([selectedGameArea.fixedLatitude, selectedGameArea.initialCenterLng], selectedGameArea.zoom);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, minZoom: 2, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+
+            // --- Custom Zoom Control Listeners ---
+            document.getElementById('custom-zoom-in').addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                map.zoomIn();
+            });
+            document.getElementById('custom-zoom-out').addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                map.zoomOut();
+            });
+
+            // Calculate initial plane geo-location
+            planeGeoLocation = map.containerPointToLatLng(L.point(plane.x + plane.width / 2, plane.y + plane.height / 2));
+
+            // Variables to handle zoom behavior gracefully
+            let zoomAnchorLatLng = null;
+            map.on('zoomstart', function() {
+                // Calculate the pixel point that should remain "fixed" relative to the plane's crosshair/ground point
+                const currentGroundOffsetY = BASE_GROUND_OFFSET_Y * Math.pow(2, (BASE_ZOOM_FOR_GROUND_OFFSET - map.getZoom()));
+                const crosshairPoint = L.point(plane.x + plane.width / 2, plane.y + currentGroundOffsetY);
+                zoomAnchorLatLng = map.containerPointToLatLng(crosshairPoint);
+            });
+            map.on('zoomend', function() {
+                if (!zoomAnchorLatLng) return; // Exit if no anchor point
+                const newScreenPosOfAnchor = map.latLngToContainerPoint(zoomAnchorLatLng); // Get new screen position of anchor
+                const newGroundOffsetY = BASE_GROUND_OFFSET_Y * Math.pow(2, (BASE_ZOOM_FOR_GROUND_OFFSET - map.getZoom()));
+                const desiredCrosshairScreenPos = L.point(plane.x + plane.width / 2, plane.y + newGroundOffsetY);
+                const offset = newScreenPosOfAnchor.subtract(desiredCrosshairScreenPos); // Calculate pixel offset needed
+                map.panBy(offset, { animate: false }); // Pan map to correct position
+
+                // Recalculate plane geo-location based on new map view
+                const planeScreenCenter = L.point(plane.x + plane.width / 2, plane.y + plane.height / 2);
+                planeGeoLocation = map.containerPointToLatLng(planeScreenCenter);
+                zoomAnchorLatLng = null; // Reset anchor
+            });
+
+            // Enable map interactions
+            map.dragging.enable(); map.touchZoom.enable(); map.doubleClickZoom.enable(); map.scrollWheelZoom.enable(); map.boxZoom.enable(); map.keyboard.enable();
+
+            // Initialize active targets and sort them by longitude for game end check
+            activeTargets = selectedGameArea.targetLatLngs.map(targetData => ({
+                latLng: L.latLng(targetData.lat, targetData.lng),
+                radiusMeters: targetData.radiusMeters,
+                basePoints: targetData.basePoints,
+                hit: false,
+                marker: null,
+                currentIconDiameter: 0
+            })).sort((a, b) => a.latLng.lng - b.latLng.lng); // Sort targets by longitude
+
+            // Set the longitude of the last (rightmost) target
+            if (activeTargets.length > 0) {
+                lastTargetLng = activeTargets[activeTargets.length - 1].latLng.lng;
+            } else {
+                lastTargetLng = -Infinity; // No targets, game might end immediately or after a short flight
+            }
+
+            // Start the game loop
+            if (animationFrameId) { cancelAnimationFrame(animationFrameId); } // Cancel any previous animation frame
+            gameLoop();
+        }
+
+        /**
+         * The main game loop that updates game state and redraws the canvas.
+         */
+        function gameLoop() {
+            if (currentGameState !== GAME_STATES.PLAYING) return; // Only run if playing
+            update(); // Update game logic
+            draw();   // Redraw game elements
+            animationFrameId = requestAnimationFrame(gameLoop); // Request next frame
+        }
+
+        /**
+         * Updates the game state, including plane movement, bomb physics,
+         * target interaction, and map scrolling.
+         */
+        function update() {
+            // Plane vertical movement and map scrolling thresholds
+            const PLANE_VERTICAL_SCROLL_UPPER_THRESHOLD = canvas.height * 0.2;
+            const PLANE_VERTICAL_SCROLL_LOWER_THRESHOLD = canvas.height * 0.8 - plane.height;
+            let verticalMapScrollPixelDelta = 0;
+
+            // Keyboard input for plane vertical movement
+            if (keysPressed['ArrowUp'] || keysPressed['KeyW']) {
+                if (plane.y > PLANE_VERTICAL_SCROLL_UPPER_THRESHOLD) {
+                    plane.y = Math.max(0, plane.y - PLANE_SPEED_Y);
+                } else {
+                    verticalMapScrollPixelDelta -= PLANE_SPEED_Y;
+                }
+            } else if (keysPressed['ArrowDown'] || keysPressed['KeyS']) {
+                if (plane.y < PLANE_VERTICAL_SCROLL_LOWER_THRESHOLD) {
+                    plane.y = Math.min(canvas.height - plane.height, plane.y + PLANE_SPEED_Y);
+                } else {
+                    verticalMapScrollPixelDelta += PLANE_SPEED_Y;
+                }
+            }
+
+            // Touch input for plane vertical movement
+            if (touchIsActive) {
+                const deltaY = touchCurrentY - touchLastMoveY; // Calculate vertical movement from touch
+                // Adjust plane position or trigger map scroll based on thresholds
+                if (plane.y + deltaY < PLANE_VERTICAL_SCROLL_UPPER_THRESHOLD) {
+                    verticalMapScrollPixelDelta += (plane.y + deltaY) - PLANE_VERTICAL_SCROLL_UPPER_THRESHOLD;
+                    plane.y = PLANE_VERTICAL_SCROLL_UPPER_THRESHOLD;
+                } else if (plane.y + deltaY > PLANE_VERTICAL_SCROLL_LOWER_THRESHOLD) {
+                    verticalMapScrollPixelDelta += (plane.y + deltaY) - PLANE_VERTICAL_SCROLL_LOWER_THRESHOLD;
+                    plane.y = PLANE_VERTICAL_SCROLL_LOWER_THRESHOLD;
+                } else {
+                    plane.y += deltaY;
+                }
+                touchLastMoveY = touchCurrentY; // Update last touch Y position
+            }
+
+            // Clamp plane's Y position to stay within canvas bounds
+            plane.y = Math.min(Math.max(0, plane.y), canvas.height - plane.height);
+
+            // Update plane's geo-location based on its screen position
+            const planeScreenCenter = L.point(plane.x + plane.width / 2, plane.y + plane.height / 2);
+            planeGeoLocation = map.containerPointToLatLng(planeScreenCenter);
+
+            // Simulate horizontal map scrolling (plane flying forward)
+            mapScrollXProgress += MAP_SCROLL_SPEED_METERS_PER_FRAME;
+            const initialProjectedOriginX = map.options.crs.project(L.latLng(planeGeoLocation.lat, selectedGameArea.initialCenterLng)).x;
+            const currentProjectedPlaneLngX = initialProjectedOriginX + mapScrollXProgress;
+            planeGeoLocation.lng = map.options.crs.unproject(L.point(currentProjectedPlaneLngX, map.options.crs.project(planeGeoLocation).y)).lng;
+
+            // Adjust map view to keep the plane centered horizontally and handle vertical scroll
+            const mapCenterPixelFromPlaneGeo = map.latLngToContainerPoint(planeGeoLocation);
+            const idealMapCenterPixelX = mapCenterPixelFromPlaneGeo.x - (planeScreenCenter.x - (canvas.width / 2));
+            const idealMapCenterPixelY = mapCenterPixelFromPlaneGeo.y - (planeScreenCenter.y - (canvas.height / 2));
+            const finalMapCenterPixelY = idealMapCenterPixelY + verticalMapScrollPixelDelta;
+            const finalTargetMapCenterGeo = map.containerPointToLatLng(L.point(idealMapCenterPixelX, finalMapCenterPixelY));
+            map.setView(finalTargetMapCenterGeo, map.getZoom(), { animate: false });
+
+            // Update bombs' positions and check for ground hits
+            bombs.forEach((bomb, index) => {
+                bomb.velocityY += BOMB_GRAVITY; // Apply gravity
+                bomb.y += bomb.velocityY;       // Update bomb position
+                const groundHitY = plane.y + dynamicGroundOffsetY; // Calculate ground level in pixels
+
+                // Check if bomb hits the ground
+                if (bomb.y >= groundHitY - bomb.height / 2) {
+                    const bombLandingPointX = bomb.x + bomb.width / 2;
+                    const bombLandingPointY = groundHitY;
+                    let hitDetected = false;
+
+                    // Check for hits on active targets
+                    activeTargets.forEach(target => {
+                        if (!target.hit && target.marker) { // Only check unhit targets with visible markers
+                            const targetCenterPixel = map.latLngToContainerPoint(target.latLng); // Get target's screen position
+                            // Get target's visual radius from its marker icon
+                            const targetVisualRadius = target.marker._icon ? target.marker._icon.offsetWidth / 2 : 0;
+
+                            // Calculate distance from bomb landing point to target center
+                            const pixelDistance = Math.sqrt(Math.pow(bombLandingPointX - targetCenterPixel.x, 2) + Math.pow(bombLandingPointY - targetCenterPixel.y, 2));
+
+                            // If bomb lands within target's visual radius
+                            if (targetVisualRadius > 0 && pixelDistance <= targetVisualRadius) {
+                                const proximityScoreFactor = 1 - (pixelDistance / targetVisualRadius); // Closer to center = more points
+                                score += Math.round(target.basePoints * proximityScoreFactor); // Add score
+                                hits++;          // Increment hits
+                                target.hit = true; // Mark target as hit
+                                map.removeLayer(target.marker); // Remove target marker from map
+                                hitDetected = true; // Set hit flag
+                            }
+                        }
+                    });
+
+                    if (!hitDetected) { misses++; } // If no target was hit, increment misses
+                    explosions.push({ x: bombLandingPointX, y: groundHitY, frame: 0 }); // Create an explosion effect
+                    bombs.splice(index, 1); // Remove the bomb
+                    updateScoreDisplay(); // Update score display
+                }
+            });
+
+            // Update explosions and remove expired ones
+            explosions.forEach((explosion, index) => {
+                explosion.frame++;
+                if (explosion.frame > EXPLOSION_DURATION) { explosions.splice(index, 1); }
+            });
+
+            // Adjust dynamic ground offset based on map zoom level to simulate perspective
+            dynamicGroundOffsetY = BASE_GROUND_OFFSET_Y * Math.pow(2, (BASE_ZOOM_FOR_GROUND_OFFSET - map.getZoom()));
+            dynamicGroundOffsetY = Math.max(20, dynamicGroundOffsetY); // Ensure a minimum offset
+
+            // Update target markers (visibility and size based on zoom)
+            const currentMapBounds = map.getBounds();
+            activeTargets.forEach(target => {
+                if (!target.hit) { // Only process unhit targets
+                    if (currentMapBounds.contains(target.latLng)) { // If target is within current map view
+                        // Calculate pixel radius of the target based on its real-world radius and current map scale
+                        const targetProjectedPoint = map.options.crs.project(target.latLng);
+                        const pointAtRadiusEast = L.point(targetProjectedPoint.x + target.radiusMeters, targetProjectedPoint.y);
+                        const latLngAtRadiusEast = map.options.crs.unproject(pointAtRadiusEast);
+                        const targetPixelPoint = map.latLngToContainerPoint(target.latLng);
+                        const radiusEastPixelPoint = map.latLngToContainerPoint(latLngAtRadiusEast);
+                        const pixelRadius = targetPixelPoint.distanceTo(radiusEastPixelPoint);
+                        const newIconDiameter = Math.max(16, pixelRadius * 2); // Minimum diameter for visibility
+
+                        if (!target.marker) { // If marker doesn't exist, create it
+                            const targetIcon = L.divIcon({ className: 'target-icon', html: `<div style="width:${newIconDiameter}px; height:${newIconDiameter}px; line-height:${newIconDiameter - 4}px;">X</div>`, iconSize: [newIconDiameter, newIconDiameter], iconAnchor: [newIconDiameter / 2, newIconDiameter / 2] });
+                            target.marker = L.marker(target.latLng, { icon: targetIcon }).addTo(map);
+                            target.currentIconDiameter = newIconDiameter;
+                        } else if (target.currentIconDiameter !== newIconDiameter) { // If diameter changed, update icon
+                            const updatedIcon = L.divIcon({ className: 'target-icon', html: `<div style="width:${newIconDiameter}px; height:${newIconDiameter}px; line-height:${newIconDiameter - 4}px;">X</div>`, iconSize: [newIconDiameter, newIconDiameter], iconAnchor: [newIconDiameter / 2, newIconDiameter / 2] });
+                            target.marker.setIcon(updatedIcon);
+                            target.currentIconDiameter = newIconDiameter;
+                        }
+                    } else {
+                        // If target is outside map bounds, remove its marker if it exists
+                        if (target.marker) {
+                            map.removeLayer(target.marker);
+                            target.marker = null;
+                            delete target.currentIconDiameter;
+                        }
+                    }
+                }
+            });
+
+            // NEW GAME END CONDITION: Game ends when the last target passes off the left side of the screen
+            let allTargetsPassed = true;
+            if (activeTargets.length > 0) {
+                // Get the pixel position of the last (rightmost) target.
+                // We assume targets are sorted by longitude, so the last one is the "furthest" along the flight path.
+                const lastTarget = activeTargets[activeTargets.length - 1];
+                if (!lastTarget.hit) { // Only check if the last target hasn't been hit
+                    const lastTargetScreenPoint = map.latLngToContainerPoint(lastTarget.latLng);
+                    // If the last target is still visible on screen or to the right of the plane's x-position
+                    // then the game has not ended yet.
+                    if (lastTargetScreenPoint.x > plane.x - (plane.width / 2)) {
+                        allTargetsPassed = false;
+                    }
+                }
+            } else {
+                // If there are no targets, the game can end after a short duration or immediately,
+                // but for now, we'll let it continue until bombs/explosions clear.
+                // This scenario should be rare with pre-defined areas.
+            }
+
+            // End the game if all targets have been passed/hit and no bombs or explosions are active
+            if (allTargetsPassed && bombs.length === 0 && explosions.length === 0) {
+                endGame();
+            }
+
+            updateScoreDisplay(); // Always update score display
+        }
+
+        /**
+         * Draws all game elements on the canvas, including the plane, bombs,
+         * and explosions.
+         */
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+
+            // Draw the plane with rotation
+            ctx.save(); // Save canvas state
+            ctx.translate(plane.x + plane.width / 2, plane.y + plane.height / 2); // Move origin to plane center
+            ctx.rotate(plane.tiltAngle); // Apply plane tilt
+            ctx.fillStyle = '#2d3748'; // Plane body color
+            ctx.beginPath(); // Start drawing plane shape
+            ctx.moveTo(plane.width / 2, 0);
+            ctx.lineTo(plane.width * 0.2, -plane.height / 2);
+            ctx.lineTo(-plane.width / 2, -plane.height * 1.0);
+            ctx.lineTo(-plane.width / 2, plane.height * 1.0);
+            ctx.lineTo(plane.width * 0.2, plane.height / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#a0aec0'; // Cockpit color
+            ctx.fillRect(plane.width * 0.3, -2.5, 8, 5); // Cockpit rectangle
+            ctx.restore(); // Restore canvas state (undo translation and rotation)
+
+            // Draw bombs
+            bombs.forEach(bomb => {
+                // Scale bombs based on their distance to the ground for a pseudo-3D effect
+                const dropDistance = bomb.y - (plane.y + plane.height);
+                const totalFallDistance = (plane.y + dynamicGroundOffsetY) - (plane.y + plane.height);
+                let scaleFactor = 1 - (dropDistance / totalFallDistance * 0.9); // Scale diminishes as bomb falls
+                scaleFactor = Math.max(0.1, Math.min(1, scaleFactor)); // Clamp scale factor
+
+                const scaledWidth = bomb.width * scaleFactor;
+                const scaledHeight = bomb.height * scaleFactor;
+                const drawX = bomb.x + (bomb.width - scaledWidth) / 2; // Center scaled bomb
+                const drawY = bomb.y;
+                ctx.fillStyle = '#4a5568'; // Bomb body color
+                ctx.fillRect(drawX, drawY, scaledWidth, scaledHeight);
+                ctx.fillStyle = '#cbd5e1'; // Bomb fin color
+                ctx.beginPath();
+                ctx.moveTo(drawX, drawY + scaledHeight);
+                ctx.lineTo(drawX + scaledWidth, drawY + scaledHeight);
+                ctx.lineTo(drawX + scaledWidth / 2, drawY + scaledHeight + (scaledHeight / 2)); // Triangle for fins
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            // Draw explosions
+            explosions.forEach(explosion => {
+                const opacity = 1 - (explosion.frame / EXPLOSION_DURATION); // Fade out over time
+                const radius = (explosion.frame / EXPLOSION_DURATION) * 40; // Grow over time
+                ctx.fillStyle = `rgba(255, 165, 0, ${opacity})`; // Orange outer glow
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = `rgba(255, 69, 0, ${opacity * 0.7})`; // Reddish inner glow
+                ctx.beginPath();
+                ctx.arc(explosion.x, explosion.y, radius * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw shadow of the plane (small opaque triangle) pointing to the right
+            if (currentGameState === GAME_STATES.PLAYING) {
+                const shadowX = plane.x + plane.width / 2; // Position shadow to the below the plane                
+                const shadowY = plane.y + dynamicGroundOffsetY; // Position shadow at calculated ground level
+
+                const shadowWidth = 20; // Width of the shadow triangle
+                const shadowHeight = 10; // Height of the shadow triangle
+
+
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; // Semi-transparent black for shadow
+                ctx.beginPath();
+                ctx.moveTo(shadowX+10, shadowY); // Left point of the triangle
+                ctx.lineTo(shadowX - shadowWidth, shadowY - shadowHeight / 2); // Top point
+                ctx.lineTo(shadowX - shadowWidth, shadowY + shadowHeight / 2); // Bottom point
+                ctx.closePath();
+                ctx.fill();
+
+
+                // ctx.fillStyle = 'rgba(255, 0, 0, 0.2)'; // Semi-transparent black for shadow
+                // ctx.beginPath();
+
+                // ctx.moveTo(shadowX-8, shadowY-8); // Left point of the triangle
+
+                // ctx.lineTo(shadowX - shadowWidth, 8+ shadowY - shadowHeight / 2); // Top point
+                // ctx.lineTo(shadowX - shadowWidth, -8 + shadowY + shadowHeight / 2); // Bottom point
+                // ctx.closePath();
+                // ctx.fill();
+
+
+
+            }
+
+            // Draw shadow of the plane (small opaque triangle)
+            // if (currentGameState === GAME_STATES.PLAYING) {
+            //     const shadowX = plane.x + plane.width / 2;
+            //     const shadowY = plane.y + dynamicGroundOffsetY; // Position shadow at calculated ground level
+            //     const shadowWidth = 20; // Width of the shadow triangle
+            //     const shadowHeight = 10; // Height of the shadow triangle
+
+            //     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent black for shadow
+            //     ctx.beginPath();
+            //     ctx.moveTo(shadowX, shadowY); // Top point of the triangle
+            //     ctx.lineTo(shadowX - shadowWidth / 2, shadowY + shadowHeight); // Bottom-left point
+            //     ctx.lineTo(shadowX + shadowWidth / 2, shadowY + shadowHeight); // Bottom-right point
+            //     ctx.closePath();
+            //     ctx.fill();
+            // }
+
+            // Draw crosshair if game is playing
+            // if (currentGameState === GAME_STATES.PLAYING) {
+
+
+            //     const crosshairX = plane.x + plane.width / 2;
+            //     const crosshairY = plane.y + dynamicGroundOffsetY; // Position crosshair at calculated ground level
+            //     const crosshairSize = 15;
+            //     const crosshairThickness = 2;
+            //     ctx.strokeStyle = '#ef4444'; // Red color
+            //     ctx.lineWidth = crosshairThickness;
+            //     ctx.beginPath();
+
+            //     ctx.moveTo(crosshairX - crosshairSize / 2, crosshairY); // Horizontal line
+            //     ctx.lineTo(crosshairX + crosshairSize / 2, crosshairY);
+            //     ctx.moveTo(crosshairX, crosshairY - crosshairSize / 2); // Vertical line
+            //     ctx.lineTo(crosshairX, crosshairY + crosshairSize / 2);
+            //     ctx.stroke();
+
+            // }
+
+
+        }
+
+        /**
+         * Updates the score display text.
+         */
+        function updateScoreDisplay() {
+            scoreDisplay.textContent = `Score: ${score} | Hits: ${hits} | Misses: ${misses}`;
+        }
+
+        /**
+         * Ends the game, displays the game over modal, and prepares for debriefing.
+         */
+        function endGame() {
+            currentGameState = GAME_STATES.GAME_OVER; // Set game state to game over
+            cancelAnimationFrame(animationFrameId);    // Stop the game loop
+
+            gameOverTitle.textContent = 'Game Over!';
+            finalScoreDisplay.textContent = `Final Score: ${score}`;
+            proximityResultsDisplay.textContent = `Targets Hit: ${hits} | Bombs Missed: ${misses}`;
+            showModal(gameOverModal); // Show game over modal
+
+            // Event listener for getting debriefing from Gemini API
+            getDebriefingButton.onclick = () => {
+                const prompt = `Generate a concise, encouraging, or reflective debriefing for a pilot who completed a bombing mission. Their final score was ${score} points, with ${hits} targets hit and ${misses} bombs missed. Suggest an improvement or a highlight based on their performance. Keep it under 100 words.`;
+                callGeminiAPI(prompt, debriefingOutput, debriefingLoadingSpinner);
+            };
+        }
+
+        /**
+         * Shows a given modal element by removing the 'hidden' class.
+         * @param {HTMLElement} modalElement - The modal element to show.
+         */
+        function showModal(modalElement) {
+            modalElement.classList.remove('hidden');
+        }
+
+        /**
+         * Hides a given modal element by adding the 'hidden' class.
+         * @param {HTMLElement} modalElement - The modal element to hide.
+         */
+        function hideModal(modalElement) {
+            modalElement.classList.add('hidden');
+        }
+
+        // Initialize the game when the window loads
+        window.onload = function() {
+            initGame();
+        };
+    </script>
+</body>
+</html>

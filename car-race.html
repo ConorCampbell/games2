@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC 3D Driving Game - Race Course</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Inter', sans-serif;
+            color: white;
+        }
+        canvas {
+            display: block;
+        }
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .ui-panel {
+            position: absolute;
+            background-color: rgba(0,0,0,0.6);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 2px solid #0ff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+            text-align: center;
+        }
+        #info-overlay {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0));
+            border: none;
+            box-shadow: none;
+        }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            font-weight: 700;
+            text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+        }
+        p {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        #speedometer {
+            bottom: 20px;
+            right: 20px;
+        }
+        #speed-value {
+            font-size: 3em;
+            font-weight: bold;
+        }
+        #speed-label {
+            font-size: 1em;
+        }
+        #race-info {
+            bottom: 20px;
+            left: 20px;
+        }
+        #timer, #checkpoints {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        #game-status-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            pointer-events: all;
+            z-index: 10;
+        }
+        #game-status-overlay h2 {
+            font-size: 4em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px #0ff;
+        }
+        #game-status-overlay button {
+            font-size: 2em;
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 2px solid #0ff;
+            background-color: rgba(0, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #game-status-overlay button:hover {
+            background-color: rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 20px #0ff;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="ui-container">
+        <div id="info-overlay">
+            <h1>NYC Drive</h1>
+            <p>Use Arrow Keys (↑, ↓, ←, →) to drive</p>
+        </div>
+
+        <div id="speedometer" class="ui-panel">
+            <div id="speed-value">0</div>
+            <div id="speed-label">MPH</div>
+        </div>
+
+        <div id="race-info" class="ui-panel">
+            <div id="timer">Time: 0.00</div>
+            <div id="checkpoints">Checkpoints: 0 / 0</div>
+        </div>
+    </div>
+
+    <div id="game-status-overlay">
+        <div id="start-screen">
+            <h2>Race Challenge</h2>
+            <button id="start-button">Start Race</button>
+            <div style="margin-top: 30px;">
+                <label for="difficulty-slider" style="font-size:1.2em; color:#0ff;">Difficulty: <span id="difficulty-value">3</span></label>
+                <input type="range" id="difficulty-slider" min="1" max="5" value="3" step="1" style="width:220px; margin-left:15px; vertical-align:middle;">
+            </div>
+            <script>
+                const difficultySlider = document.getElementById('difficulty-slider');
+                const difficultyValue = document.getElementById('difficulty-value');
+                difficultySlider.addEventListener('input', () => {
+                    difficultyValue.textContent = difficultySlider.value;
+                    // You can use difficultySlider.value in your game logic as needed
+                });
+            </script>
+
+        </div>
+        <div id="finish-screen" style="display: none;">
+            <h2>Finish!</h2>
+            <p id="final-time" style="font-size: 2em; margin-bottom: 20px;"></p>
+            <p id="score" style="font-size: 1.5em; margin-bottom: 30px;"></p>
+            <button id="restart-button">Race Again</button>
+
+
+        </div>
+    </div>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+
+    <script type="module">
+
+        // === SCENE SETUP ===
+        let scene, camera, renderer;
+        let car, carBoundingBox;
+        let buildings = [];
+        let buildingBoundingBoxes = [];
+        let coursePath = [];
+        let checkpointMarkers = [];
+        let checkpointTextMarkers = [];
+
+        let nextCheckpointIndex = 0;
+        let arrowGroup, pointerArrow;
+
+        console.log("difficultySlider", difficultySlider.value)
+
+        // ==== Street Dimenstions
+
+        let streetWidth = 31 - difficultySlider.value;
+        let buildingBlockSize = 31 - difficultySlider.value;
+        let streetSpacing = buildingBlockSize + streetWidth;
+        let cityLimit = streetSpacing  * 6;
+        let buildingDensity = 0.7 + (difficultySlider.value * 0.5);
+
+
+        const fontLoader = new THREE.FontLoader();
+        let loadedFont = null;
+        
+        
+        // === GAME STATE ===
+        let gameState = 'waiting'; // waiting, racing, finished
+        let raceStartTime = 0;
+        let raceTime = 0;
+
+        // === CAR PHYSICS & CONTROLS (UPDATED) ===
+        const carState = {
+            speed: 0,
+            acceleration: 0.015,
+            deceleration: 0.01,
+            maxSpeed: 1.2,
+            steering: 0,
+            steeringAcceleration: 0.005, // How fast the steering wheel turns
+            maxSteering: 0.04,          // Max turn angle of the car
+            steeringFriction: 0.95,     // How fast the wheel returns to center
+        };
+
+        const keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+        // === UI ELEMENTS ===
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const startScreen = document.getElementById('start-screen');
+        const finishScreen = document.getElementById('finish-screen');
+        const gameStatusOverlay = document.getElementById('game-status-overlay');
+
+
+        // let baseDir = "/Users/conor/Documents/Python%20Scripts/NewSite/ff"
+        let baseDir = "https://fatfinger.pythonanywhere.com"
+
+        const soundCheckpoint = new Audio(`${baseDir}/static/sound/ding2.mp3`);
+        soundCheckpoint.volume=0.3
+
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', startGame);
+
+        function init() {
+            
+            // let scene, camera, renderer;
+            // let car, carBoundingBox;
+            buildings = [];
+            buildingBoundingBoxes = [];
+            coursePath = [];
+            checkpointMarkers = [];
+            checkpointTextMarkers = [];
+
+            nextCheckpointIndex = 0;
+            arrowGroup=null
+            pointerArrow = null
+            
+            const oldCanvas = document.querySelector('canvas');
+            if (oldCanvas) {
+                oldCanvas.parentNode.removeChild(oldCanvas);
+            }
+
+            // --- Renderer, Scene, Camera ---
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            document.body.appendChild(renderer.domElement);
+
+            scene = new THREE.Scene();
+
+            scene.background = new THREE.Color(0x102a43);
+            scene.fog = new THREE.Fog(0x102a43, 50, 250);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+
+            // --- Lighting ---
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            directionalLight.position.set(30, 60, 40);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 4096;
+            directionalLight.shadow.mapSize.height = 4096;
+            directionalLight.shadow.camera.near = 0.5;
+            directionalLight.shadow.camera.far = 500;
+            directionalLight.shadow.camera.left = -150;
+            directionalLight.shadow.camera.right = 150;
+            directionalLight.shadow.camera.top = 150;
+            directionalLight.shadow.camera.bottom = -150;
+            scene.add(directionalLight);
+
+            // --- Ground Plane & Road Markings ---
+            const groundGeometry = new THREE.PlaneGeometry(500, 500);
+            const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, roughness: 0.9 });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+            addRoadMarkings();
+
+            // --- Create Car, City, and Course ---
+            createCar();
+
+            createCity();
+            createCourse();
+
+            // --- Create Guidance Systems ---
+            arrowGroup = new THREE.Group();
+            scene.add(arrowGroup);
+            createPointerArrow();
+
+            // --- Event Listeners ---
+            window.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+            window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+            window.addEventListener('resize', onWindowResize);
+
+            // --- Start Animation Loop ---
+            animate();
+        }
+
+        
+        function clearCity() {
+            // Remove buildings and signs from the scene
+            buildings.forEach(b => scene.remove(b));
+            buildingBoundingBoxes.length = 0;
+            buildings.length = 0;
+            // Optionally, remove any sign groups if you store them
+            // If you add signs to a signs array, clear them here too
+
+            // we need to destoy the whole world and call init()
+        }
+
+
+        function startGame() {
+            
+            gameState = 'racing';
+
+            init();
+
+            // Reset game state
+            nextCheckpointIndex = 1;            
+            raceStartTime = performance.now();
+
+            // Reset car
+            car.position.set(coursePath[0].x, 0.6, coursePath[0].z +5);
+            car.rotation.y = Math.atan2(coursePath[1].x - coursePath[0].x, coursePath[1].z - coursePath[0].z);
+            carState.speed = 0;
+            carState.steering = 0;
+
+            
+            // Update UI & Guides
+            gameStatusOverlay.style.display = 'none';
+            finishScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+
+            updateCheckpointUI();
+            updateCheckpointMarkers();
+            updateGuidingArrows();
+            pointerArrow.visible = true;
+
+            // TODO: we want a coutdown here. 3,2,1, go using red lights and a final green light going
+
+        }
+
+
+function setHeadlightColor(newColorHex) {
+    for (const light of car.headlights) {
+        light.material.color.setHex(newColorHex);
+        light.material.emissive.setHex(newColorHex);
+    }
+}
+
+function createCar() {
+    car = new THREE.Group();
+
+    const bodyMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xff0000,
+        roughness: 0.4,
+        metalness: 0.8,
+        clearcoat: 0.2,
+    });
+
+    // Car Body (rear is now -Z, front is +Z)
+    const bodyGeometry = new THREE.BoxGeometry(2.4, 0.6, 4.5);
+    const carBody = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    carBody.castShadow = true;
+    carBody.receiveShadow = true;
+    car.add(carBody);
+
+    // Cabin – positioned further back (toward -Z, rear)
+    const cabinGeometry = new THREE.BoxGeometry(1.4, 0.5, 2);
+    const cabinMaterial = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.2 });
+    const carCabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
+
+    carCabin.position.set(0, 0.6, 1); // More toward rear now
+    carCabin.castShadow = true;
+    carCabin.receiveShadow = true;
+    car.add(carCabin);
+
+    // Spoiler – at rear (Z+)
+    const spoilerGeometry = new THREE.BoxGeometry(1.6, 0.1, 0.4);
+    const spoilerMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    const spoiler = new THREE.Mesh(spoilerGeometry, spoilerMaterial);
+
+    spoiler.position.set(0, 1, -2.9); // Rear
+    spoiler.castShadow = true;
+    car.add(spoiler);
+
+
+    // Exhaust pipes – rear bottom
+    const exhaustGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.3, 16);
+    const exhaustMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 1 });
+    for (let i of [-0.3, 0.3]) {
+        const exhaust = new THREE.Mesh(exhaustGeometry, exhaustMaterial);
+        exhaust.rotation.z = Math.PI / 2;
+        exhaust.position.set(i, -0.15, 2.4);
+        exhaust.castShadow = true;
+        car.add(exhaust);
+    }
+
+    // Wheels
+    const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.5, 32);
+    const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+    const wheelPositions = [
+        new THREE.Vector3(-1.2, -0.2, -1.6), // front-left
+        new THREE.Vector3(1.2, -0.2, -1.6),  // front-right
+        new THREE.Vector3(-1.2, -0.2, 1.6),  // rear-left
+        new THREE.Vector3(1.2, -0.2, 1.6),   // rear-right
+    ];
+    wheelPositions.forEach(pos => {
+        const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+        wheel.rotation.x = Math.PI / 2;
+        wheel.position.copy(pos);
+        wheel.castShadow = true;
+        car.add(wheel);
+    });
+
+    // Rear Fenders – sporty look
+    const fenderGeometry = new THREE.BoxGeometry(0.6, 0.4, 1.2);
+    const fenderMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const rearFenderL = new THREE.Mesh(fenderGeometry, fenderMaterial);
+    const rearFenderR = new THREE.Mesh(fenderGeometry, fenderMaterial);
+    rearFenderL.position.set(-1.4, 0.15, -1.6);
+    rearFenderR.position.set(1.4, 0.15, -1.6);
+
+    rearFenderL.rotation.y = Math.PI / 12;
+    rearFenderR.rotation.y = -Math.PI / 12;
+    car.add(rearFenderL, rearFenderR);
+
+    // Headlights
+
+    car.headlights = [];
+
+    const headlightGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.3, 12);
+    const headlightMat = new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 1 });
+
+    for (let x of [-0.5, 0.5]) {
+        const light = new THREE.Mesh(headlightGeo, headlightMat.clone()); // Use `.clone()` to make them independent
+        light.rotation.x = Math.PI / 2;
+        light.position.set(x, 0.01, -2.225);
+        car.add(light);
+        car.headlights.push(light); // Save reference
+    }
+
+    // for (let x of [-0.5, 0.5]) {
+    //     const light = new THREE.Mesh(headlightGeo, headlightMat);
+    //     light.rotation.x = Math.PI / 2;
+    //     light.position.set(x, 0.01, -2.225);
+    //     car.add(light);
+    // }
+
+    // Final position and bounding box
+    car.position.set(0, 1.6, 0);
+    scene.add(car);
+
+    // set the bounding box of the car to be a bit smaller that the car
+    carBoundingBox = new THREE.Box3().setFromObject(car); ;
+
+}
+
+
+function createCity() {
+
+    // set street dimensions based on difficulty
+    streetWidth = 40 - (difficultySlider.value *2.5);
+    buildingBlockSize = 40 - (difficultySlider.value * 2.5);
+    streetSpacing = buildingBlockSize + streetWidth;
+    cityLimit = streetSpacing  * 6;
+    buildingDensity = 0.5 + (difficultySlider.value * 0.15);
+
+    const signs = [
+            'Fat Finger Data',
+            'Realtime Polling',
+            'Unbiased Results',
+            'Opinion',
+            'Games',
+            'Data',
+            'Analytics',
+            'Insights',
+            'Trends',
+            'Feedback',
+            'Community',
+            'Engage', 'Explore', 'Discover', 'Connect', 'Games','Rewards'];
+
+        const buildingGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+        const citySize = 10;
+
+        for (let i = -citySize / 2; i < citySize / 2; i++) {
+            for (let j = -citySize / 2; j < citySize / 2; j++) {
+
+                if (Math.random() < buildingDensity) {
+                    const buildingHeight = Math.random() * 50 + 20;
+                    const buildingMaterial = new THREE.MeshStandardMaterial({
+                        color: new THREE.Color().setHSL(0.6, 0.1, Math.random() * 0.3 + 0.4),
+                        roughness: 0.8,
+                        metalness: 0.1
+                    });
+
+                    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+                    const scaleX = buildingBlockSize * (0.7 + Math.random() * 0.3);
+                    const scaleZ = buildingBlockSize * (0.7 + Math.random() * 0.3);
+                    building.scale.set(scaleX, buildingHeight, scaleZ);
+
+                    const x = i * (buildingBlockSize + streetWidth) + (buildingBlockSize + streetWidth)/2;
+                    const z = j * (buildingBlockSize + streetWidth) + (buildingBlockSize + streetWidth)/2;
+                    building.position.set(x, buildingHeight / 2, z);
+                    building.castShadow = true;
+                    building.receiveShadow = true;
+
+                    const windowTexture = createWindowsTexture();
+                    building.material.map = windowTexture;
+                    building.material.needsUpdate = true;
+
+                    scene.add(building);
+                    buildings.push(building);
+                    const bBox = new THREE.Box3().setFromObject(building);
+                    buildingBoundingBoxes.push(bBox);
+
+
+                    // 🔽 Add signage to some buildings
+                    if (Math.random() < 0.9) {  // 20% chance to get a sign
+                        
+                        console.log("font", loadedFont)
+                        const signText = signs[Math.floor(Math.random() * signs.length)];
+                        const textGeo = new THREE.TextGeometry(signText, {
+                            font: loadedFont,
+                            size: 1.5,
+                            height: 0.4,
+                            curveSegments: 4,
+                            bevelEnabled: false
+                        });
+
+                        // --- Vary sign and text colors ---
+                        const signColors = [0x1e90ff, 0xff4081, 0x00e676, 0xffd600, 0x8e24aa, 0xff7043, 0x00bcd4];
+                        const textColors = [0xffffff, 0x222222, 0xffffcc, 0x333300];
+                        const bgColor = signColors[Math.floor(Math.random() * signColors.length)];
+                        const txtColor = textColors[Math.floor(Math.random() * textColors.length)];
+
+                        const textMaterial = new THREE.MeshStandardMaterial({ color: txtColor, emissive: 0x222222 });
+                        const textMesh = new THREE.Mesh(textGeo, textMaterial);
+
+                        // Compute bounding box for centering
+                        textGeo.computeBoundingBox();
+                        const textWidth = textGeo.boundingBox.max.x - textGeo.boundingBox.min.x;
+                        const textHeight = textGeo.boundingBox.max.y - textGeo.boundingBox.min.y;
+
+                        // --- Create background plane ---
+                        const padding = 0.5;
+                        const bgGeometry = new THREE.PlaneGeometry(textWidth + padding * 2, textHeight + padding * 2);
+                        const bgMaterial = new THREE.MeshStandardMaterial({
+                            color: bgColor,
+                            roughness: 0.6,
+                            metalness: 0.2,
+                            transparent: true,
+                            opacity: 0.85,
+                            emissive: bgColor,
+                            emissiveIntensity: 0.25
+                        });
+                        const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
+
+                        // --- Group sign background and text ---
+                        const signGroup = new THREE.Group();
+                        signGroup.add(bgMesh);
+                        signGroup.add(textMesh);
+
+                        // Center text on background
+                        textMesh.position.set(-textWidth / 2, -textHeight / 2, 0.06); // Slightly in front of bg
+
+                        // const side = Math.floor(Math.random() * 4); // 0: +Z (front), 1: -Z (back), 2: +X (right), 3: -X (left)
+                        // let signX = x, signY = (Math.floor(Math.random() * 3) + 1) * 2.5, signZ = z;
+                        // let signRotationY = 0;
+                        // switch (side) {
+                        //     case 0: // +Z (front)
+                        //         signZ += scaleZ / 2 + 0.1;
+                        //         signRotationY = 0;
+                        //         break;
+                        //     case 1: // -Z (back)
+                        //         signZ -= scaleZ / 2 + 0.1;
+                        //         signRotationY = Math.PI;
+                        //         break;
+                        //     case 2: // +X (right)
+                        //         signX += scaleX / 2 + 0.1;
+                        //         signRotationY = -Math.PI / 2;
+                        //         break;
+                        //     case 3: // -X (left)
+                        //         signX -= scaleX / 2 + 0.1;
+                        //         signRotationY = Math.PI / 2;
+                        //         break;
+                        // }
+                        // signGroup.position.set(signX, signY, signZ);
+                        // signGroup.rotation.y = signRotationY;
+
+                        // Position sign on front face
+                        signGroup.position.set(
+                            x,
+                            (Math.floor(Math.random() * 5) + 1) * 3,
+                            z + scaleZ / 2 + 0.1 // Slightly in front of building
+                        );
+
+
+                        // Make sign face forward (optional)
+                        // signGroup.rotation.y = 0;
+
+                        signGroup.castShadow = true;
+                        signGroup.traverse(obj => { if (obj.isMesh) obj.castShadow = true; });
+
+                        scene.add(signGroup);
+
+                    }
+
+                }
+            }
+        }
+
+};
+
+function createWindowsTexture() {
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 128;
+    canvas.height = 256;
+
+    // Base building color
+    context.fillStyle = '#555';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let y = 8; y < canvas.height; y += 24) {
+        for (let x = 8; x < canvas.width; x += 24) {
+            const rnd = Math.random();
+
+            if (rnd > 0.2) {
+                if (rnd > 0.85) {
+                    // Light ON — glowing yellow
+                    const glowColors = ['#ffee88', '#ffffcc', '#fff2b2'];
+                    context.fillStyle = glowColors[Math.floor(Math.random() * glowColors.length)];
+                } else {
+                    // Light OFF — curtains or dim glass
+                    context.fillStyle = '#bbaa88';
+                }
+
+                // Optional: soften glow edges by drawing larger semi-transparent outer box
+                // before drawing inner "light" box
+                if (rnd > 0.85) {
+                    context.fillStyle = 'rgba(255, 240, 150, 0.25)';
+                    context.fillRect(x - 1, y - 1, 18, 18); // outer glow
+                    context.fillStyle = 'rgba(255, 240, 150, 0.85)';
+                    context.fillRect(x, y, 16, 16); // inner window light
+                } else {
+                    context.fillRect(x, y, 16, 16); // regular window
+                }
+            }
+        }
+    }
+
+    return new THREE.CanvasTexture(canvas);
+}
+
+
+function addRoadMarkings() {
+
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.2 });
+
+    for(let i = -cityLimit; i <= cityLimit; i += streetSpacing) {
+        let points = [new THREE.Vector3(i, 0.01, -cityLimit), new THREE.Vector3(i, 0.01, cityLimit)];
+        let geometry = new THREE.BufferGeometry().setFromPoints(points);
+        scene.add(new THREE.Line(geometry, lineMaterial));
+        points = [new THREE.Vector3(-cityLimit, 0.01, i), new THREE.Vector3(cityLimit, 0.01, i)];
+        geometry = new THREE.BufferGeometry().setFromPoints(points);
+        scene.add(new THREE.Line(geometry, lineMaterial));
+    }
+}
+
+
+function createCourse() {
+
+
+        coursePath = [
+            new THREE.Vector3(0, 0, 10),
+            new THREE.Vector3(0, 0, -1 *streetSpacing),
+            new THREE.Vector3(streetSpacing, 0, -2 * streetSpacing),
+            new THREE.Vector3(2*streetSpacing, 0, -2*streetSpacing),
+            new THREE.Vector3(3*streetSpacing, 0, -1 * streetSpacing),
+            new THREE.Vector3(3*streetSpacing, 0, streetSpacing),
+            new THREE.Vector3(2*streetSpacing, 0, 2*streetSpacing),
+            new THREE.Vector3(0, 0, 3* streetSpacing),
+            new THREE.Vector3(-2 *streetSpacing, 0, 2*streetSpacing),
+            new THREE.Vector3(-2* streetSpacing, 0, 0),
+            new THREE.Vector3(0, 0, 10),
+        ];
+
+
+        const checkpointGeo = new THREE.TorusGeometry(8, 1, 16, 100);
+        const checkpointMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 });
+
+        for (let i = 1; i < coursePath.length; i++) {
+            // Create the torus
+            const marker = new THREE.Mesh(checkpointGeo, checkpointMat);
+            marker.position.set(coursePath[i].x, 3, coursePath[i].z);
+            marker.rotation.x = Math.PI / 2;
+            marker.visible = false;
+
+            console.log("font check num", loadedFont)
+            // // Create the number label
+            const numberText = (i).toString();
+            const textGeo = new THREE.TextGeometry(numberText, {
+                font: loadedFont,
+                size: 6,           // Adjust for visibility
+                height: 1,         // Extrusion depth
+                curveSegments: 4,  // Smoothness
+                bevelEnabled: false,
+                visible: false
+            });
+
+            const textMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const textMesh = new THREE.Mesh(textGeo, textMat);
+
+            // Center text and position above the marker
+            textGeo.computeBoundingBox();
+            const centerOffset = (textGeo.boundingBox.max.x - textGeo.boundingBox.min.x) / 2;
+
+            textMesh.position.set(coursePath[i].x - centerOffset, 10, coursePath[i].z); // Y=10 above torus
+
+            scene.add(textMesh);
+
+            checkpointTextMarkers.push(textMesh);
+            scene.add(marker);
+
+            checkpointMarkers.push(marker);
+
+        }
+
+        // Add the finish line
+        const finishLineGeo = new THREE.PlaneGeometry(15, 5);
+        const finishLineMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            map: createFinishLineTexture(),
+            side: THREE.DoubleSide
+        });
+
+        const finishLine = new THREE.Mesh(finishLineGeo, finishLineMat);
+        finishLine.position.set(coursePath[0].x, 2.5, coursePath[0].z);
+        scene.add(finishLine);
+
+        updateCheckpointUI();
+
+
+    
+}
+
+
+        function createFinishLineTexture() {
+            const canvas = document.createElement('canvas'); canvas.width = 128; canvas.height = 64;
+            const context = canvas.getContext('2d'); context.fillStyle = 'white'; context.fillRect(0, 0, 128, 64);
+            context.fillStyle = 'black';
+            for (let i = 0; i < 8; i++) { for (let j = 0; j < 4; j++) { if ((i + j) % 2 === 0) { context.fillRect(i * 16, j * 16, 16, 16); } } }
+            return new THREE.CanvasTexture(canvas);
+        }
+
+// function createPointerArrow() {
+//     // Create a simple flat arrow shape using ConeGeometry but rotate it to lie flat
+//     const arrowRadius = 0.3; // width of arrow head
+//     const arrowHeight = 1.2; // length of the arrow
+//     const arrowSegments = 8;
+
+//     const arrowGeo = new THREE.ConeGeometry(arrowRadius, arrowHeight, arrowSegments);
+//     const arrowMat = new THREE.MeshStandardMaterial({
+//         color: 0x00ff00,
+//         emissive: 0x00ff00,
+//         emissiveIntensity: 0.6,
+//         side: THREE.DoubleSide
+//     });
+
+//     pointerArrow = new THREE.Mesh(arrowGeo, arrowMat);
+
+//     // Rotate the cone to point along +Z (flat horizontal pointing)
+//     pointerArrow.rotation.x = Math.PI / 2;
+
+//     // Position above the car
+//     pointerArrow.position.set(0, 2, 0);
+
+//     pointerArrow.visible = false;
+//     car.add(pointerArrow);
+// }
+
+
+        function createPointerArrow() {
+
+            const arrowGeo = new THREE.ConeGeometry(1, 2, 5);
+            const arrowMat = new THREE.MeshStandardMaterial({
+                color: 0x00ff00,         // Muted green
+                emissive: 0x333300,      // Dimmer yellow glow
+                transparent: true,
+                opacity: 0.3,            // More transparent
+                side: THREE.DoubleSide   // Ensures it’s visible from both sides
+            });
+
+            // const arrowMat = new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00ff00 });
+
+            pointerArrow = new THREE.Mesh(arrowGeo, arrowMat);
+            pointerArrow.position.set(0, 4, 0); // Position above the car
+            pointerArrow.visible = false;
+            car.add(pointerArrow); // Attach to car
+
+            // TODO: we want an arrow not a cone
+            // const dir = new THREE.Vector3( 1, 2, 0 );
+
+            // //normalize the direction vector (convert to vector of length 1)
+            // dir.normalize();
+
+            // const origin = new THREE.Vector3( 1, 1, 1 );
+            // const length = 5;
+            // const hex = 0xffff00;
+
+            // const arrowHelper = new THREE.ArrowHelper( dir, origin, length, hex );
+            // car.add( arrowHelper );
+
+        }
+
+
+function drawRoadArrows(from, pathLengthPercentage) {
+    const startPoint = coursePath[from - 1];
+    const endPoint = coursePath[from];
+    const pathVector = endPoint.clone().sub(startPoint);
+    const pathLength = pathVector.length();
+
+    pathVector.normalize();
+
+    // Create 2D arrow shape: triangle head + rectangle tail
+    const shape = new THREE.Shape();
+    const width = 2;
+    const length = 4;
+    const headLength = 1.5;
+
+    shape.moveTo(-width / 2, -length / 2);
+    shape.lineTo(-width / 2, length / 2 - headLength);
+    shape.lineTo(-width, length / 2 - headLength);      // left notch
+    shape.lineTo(0, length / 2);                         // tip
+    shape.lineTo(width, length / 2 - headLength);        // right notch
+    shape.lineTo(width / 2, length / 2 - headLength);
+    shape.lineTo(width / 2, -length / 2);
+    shape.lineTo(-width / 2, -length / 2); // close shape
+
+    const arrowGeo = new THREE.ShapeGeometry(shape);
+    const arrowMat = new THREE.MeshBasicMaterial({
+        color: 0xCCCC44,
+        transparent: true,
+        opacity: 0.6,
+        side: THREE.DoubleSide
+    });
+
+    for (let i = 15; i < pathLength; i += 10) {
+        const arrow = new THREE.Mesh(arrowGeo, arrowMat);
+        const pos = startPoint.clone().add(pathVector.clone().multiplyScalar(i));
+
+        // Set position slightly above the road surface
+        arrow.position.set(pos.x, 0.02, pos.z);
+
+        // Face up
+        arrow.rotation.x = -Math.PI / 2;
+
+        // Rotate to match the path direction
+        // arrow.rotation.z = -Math.atan2(pathVector.z, pathVector.x) + Math.PI / 2;
+        arrow.rotation.z = -Math.atan2(pathVector.z, pathVector.x) - Math.PI / 2;
+
+        arrowGroup.add(arrow);
+    }
+}
+
+
+
+function updateGuidingArrows() {
+
+    // Clear old arrows
+    while(arrowGroup.children.length > 0){ arrowGroup.remove(arrowGroup.children[0]); }
+    if (gameState !== 'racing' || nextCheckpointIndex >= coursePath.length) return;
+
+    drawRoadArrows(nextCheckpointIndex);
+    // show the next bit
+    if (nextCheckpointIndex + 1 >= coursePath.length) return;
+    drawRoadArrows(nextCheckpointIndex +1);
+
+}
+
+function updateCar() {
+    if (gameState !== 'racing') { carState.speed = 0; carState.steering = 0; return; }
+
+    let currentSpeed = carState.speed;
+    // --- Acceleration ---
+    if (keys.ArrowUp) { carState.speed += carState.acceleration; }
+    else if (keys.ArrowDown) { carState.speed -= carState.acceleration; }
+    else { if (carState.speed > 0) carState.speed -= 0.01; if (carState.speed < 0) carState.speed += 0.01; }
+    carState.speed = Math.max(-carState.maxSpeed / 2, Math.min(carState.maxSpeed, carState.speed));
+    if (Math.abs(carState.speed) < 0.01) { carState.speed = 0; }
+
+    // TODO: we want to change the color here to make the lights red if sloing down
+    if (currentSpeed > carState.speed) {
+        setHeadlightColor(0xff0000); // red lights
+    }else{
+        setHeadlightColor(0xffff00); // yellow lights
+        // setHeadlightColor(0x00ffff); // cyan lights
+    }
+
+
+    // --- Steering (UPDATED LOGIC) ---
+    let steeringInput = 0;
+    if (keys.ArrowLeft) steeringInput = 1;
+    if (keys.ArrowRight) steeringInput = -1;
+
+    if (Math.abs(carState.speed) > 0.01) {
+        carState.steering += steeringInput * carState.steeringAcceleration;
+    }
+    carState.steering = Math.max(-carState.maxSteering, Math.min(carState.maxSteering, carState.steering));
+
+    // Apply friction/return to center when no input
+    if (steeringInput === 0) {
+        carState.steering *= carState.steeringFriction;
+    }
+
+    // --- Update Position & Rotation ---
+    const turnFactor = carState.speed / carState.maxSpeed;
+    car.rotation.y += carState.steering * turnFactor;
+    const prevPosition = car.position.clone();
+    car.translateZ(carState.speed);
+
+    // --- Collision Detection ---
+    carBoundingBox.setFromObject(car).expandByScalar(-0.2);
+
+    for(let i = 0; i < buildingBoundingBoxes.length; i++) {
+        if (carBoundingBox.intersectsBox(buildingBoundingBoxes[i])) {
+            car.position.copy(prevPosition);
+            carState.speed *= -0.5; // Bounce off
+            break;
+        }
+    }
+
+
+}
+
+function checkCourseProgress() {
+    if (gameState !== 'racing' || nextCheckpointIndex >= coursePath.length) return;
+
+    const nextCheckpointPos = coursePath[nextCheckpointIndex];
+    const distanceToCheckpoint = car.position.distanceTo(nextCheckpointPos);
+
+    // TODO: we could soften the distance in easier modes
+    if (distanceToCheckpoint < 15) {
+        // reset and play a ding sound
+        soundCheckpoint.pause();
+        soundCheckpoint.currentTime = 0;
+        soundCheckpoint.play();
+
+        nextCheckpointIndex++;
+        updateCheckpointUI();
+        updateCheckpointMarkers();
+        updateGuidingArrows();
+
+        if (nextCheckpointIndex >= coursePath.length) {
+            finishRace();
+        }
+    }
+}
+
+function finishRace() {
+    gameState = 'finished';
+    raceTime = (performance.now() - raceStartTime) / 1000;
+    const score = Math.max(0, 100000 - Math.floor(raceTime * 100)).toLocaleString();
+    document.getElementById('final-time').innerText = `Final Time: ${raceTime.toFixed(2)}s`;
+    document.getElementById('score').innerText = `Score: ${score} pts`;
+    gameStatusOverlay.style.display = 'flex';
+    startScreen.style.display = 'none';
+    finishScreen.style.display = 'flex';
+    pointerArrow.visible = false;
+    while(arrowGroup.children.length > 0){ arrowGroup.remove(arrowGroup.children[0]); }
+}
+
+function updateCheckpointMarkers() {
+    checkpointMarkers.forEach((marker, index) => {
+        marker.visible = (index + 1 === nextCheckpointIndex);
+    });
+
+    // show the markers for the checkpoint after the next one ..
+    // TODO: we should only show a portion of these ...
+    // or change the look of them a bit
+    checkpointTextMarkers.forEach((textMesh, index) => {
+        textMesh.visible = (index + 1 === nextCheckpointIndex);
+    });
+}
+
+
+function updatePointerArrowNew() {
+
+    if (gameState === 'racing' && nextCheckpointIndex < coursePath.length) {
+
+        const carWorldPos = new THREE.Vector3();
+        car.getWorldPosition(carWorldPos);
+
+        const checkpointWorldPos = coursePath[nextCheckpointIndex];
+
+        // Get direction vector from car to checkpoint
+        const direction = new THREE.Vector3().subVectors(checkpointWorldPos, carWorldPos);
+        direction.y = 0; // Ignore vertical difference — keep it horizontal
+        direction.normalize();
+
+        // Compute the angle from the car's forward vector (assumed +Z)
+        const carForward = new THREE.Vector3(0, 0, 1);
+        const angle = Math.atan2(direction.x, direction.z); // Y-axis rotation
+
+        // Update arrow rotation: only Y rotation changes
+        pointerArrow.rotation.set(Math.PI / 2, angle, 0); // rotate X to lie flat, then rotate Y
+
+    }
+}
+
+
+        function updatePointerArrow() {
+            if (gameState === 'racing' && nextCheckpointIndex < coursePath.length) {
+                // The arrow is a child of the car, so we need to point it at the world coordinate
+                const nextCheckpointPos = coursePath[nextCheckpointIndex];
+                pointerArrow.lookAt(nextCheckpointPos);
+            }
+        }
+
+        function updateCamera() {
+            const cameraOffset = new THREE.Vector3(0, 5, -10);
+            cameraOffset.applyQuaternion(car.quaternion);
+            cameraOffset.add(car.position);
+            camera.position.lerp(cameraOffset, 0.1);
+            const lookAtTarget = car.position.clone().add(new THREE.Vector3(0, 1, 0));
+            camera.lookAt(lookAtTarget);
+        }
+
+        function updateUI() {
+            const speedMPH = Math.abs(carState.speed * 80).toFixed(0);
+            document.getElementById('speed-value').innerText = speedMPH;
+            if (gameState === 'racing') {
+                raceTime = (performance.now() - raceStartTime) / 1000;
+                document.getElementById('timer').innerText = `Time: ${raceTime.toFixed(2)}`;
+            }
+        }
+
+        function updateCheckpointUI() {
+            document.getElementById('checkpoints').innerText = `Checkpoints: ${nextCheckpointIndex - 1} / ${coursePath.length - 1}`;
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+
+            requestAnimationFrame(animate);
+
+            updateCar();
+
+            if (gameState === 'racing') {
+                checkCourseProgress();
+                updatePointerArrow();
+            }
+
+            updateCamera();
+            updateUI();
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Start the experience ---
+
+        // Load font asynchronously and start game only after font is loaded
+        fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+            loadedFont = font;
+            init(); // Start the game only after font is loaded
+        });
+
+        
+
+    </script>
+</body>
+</html>
