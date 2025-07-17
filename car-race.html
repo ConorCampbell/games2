@@ -70,7 +70,7 @@
             font-weight: bold;
         }
         #game-status-overlay {
-/*             position: absolute; */
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
@@ -85,7 +85,7 @@
         }
 
 #game-status-overlay {
-    position: relative;
+/*     position: relative; */
     background: url('static/img/car.jpg') center center / cover no-repeat;
 }
 
@@ -98,7 +98,7 @@
     z-index: 1;
 }
 
-        #start-screen {
+#start-screen, #finish-screen {
     position: relative;
     z-index: 2; /* Above the overlay */
     margin: 100px auto;
@@ -184,7 +184,6 @@
 
         </div>
 
-        
         <div id="finish-screen" style="display: none;">
             <h2>Finish!</h2>
             <p id="final-time" style="font-size: 2em; margin-bottom: 20px;"></p>
