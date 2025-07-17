@@ -126,6 +126,30 @@
     </div>
 
     <div id="game-status-overlay">
+        
+        <div id="coverPage" class="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-black bg-opacity-80" style="background: url('static/img/car.jpg') center center / cover no-repeat;">
+            <div class="bg-gray-900 bg-opacity-80 rounded-xl shadow-2xl p-8 max-w-lg w-full flex flex-col items-center relative">
+                <h1 class="text-3xl font-bold text-white mb-4">Street Rading Game</h1>
+                <ul class="text-lg text-gray-200 mb-6 list-disc pl-6 text-left w-full space-y-2">
+                    <li>Select a difficulty level.</li>
+                    <li>Use <span class="font-bold">Arrow Up/Down</span> or <span class="font-bold">W/S</span> to move the car.</li>
+                    <li>Follow the road arrows to hit 10 checkpoints in sequence.</li>
+                    <li>Control your spped.</li>
+                </ul>
+                <button id="coverPageOkBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-xl mt-2 shadow-lg">
+                    OK, Let's Play!
+                </button>
+            </div>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const coverPage = document.getElementById('coverPage');
+            const okBtn = document.getElementById('coverPageOkBtn');
+            okBtn.onclick = function() {
+                coverPage.classList.add('hidden');
+            };
+        });
+        </script>
         <div id="start-screen">
             <h2>Race Challenge</h2>
             <button id="start-button">Start Race</button>
@@ -143,6 +167,8 @@
             </script>
 
         </div>
+
+        
         <div id="finish-screen" style="display: none;">
             <h2>Finish!</h2>
             <p id="final-time" style="font-size: 2em; margin-bottom: 20px;"></p>
