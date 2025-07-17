@@ -1,6 +1,6 @@
 is_sound_allowed = 'true' // set to true to play sounds
 
-let audio = new Audio("/static/img/wheel/tick.mp3"); // Create audio object and load tick.mp3 file.
+let audio = new Audio("static/sound/tick.mp3"); // Create audio object and load tick.mp3 file.
 
 function ID(id) {
     return document.getElementById(id);

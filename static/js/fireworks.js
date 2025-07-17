@@ -1,10 +1,10 @@
 function popFart(e) {
   //trigger some fail sound
   var sounds = [
-    "/static/sound/fail1.mp3",
-    "/static/sound/fail4.mp3",
-    "/static/sound/fail6.mp3",
-    "/static/sound/fail7.mp3",
+    "static/sound/fail1.mp3",
+    "static/sound/fail4.mp3",
+    "static/sound/fail6.mp3",
+    "static/sound/fail7.mp3",
   ];
   var sound = sounds[Math.floor(Math.random() * sounds.length)];
 
@@ -19,10 +19,10 @@ function popConfetti(e) {
 
   // pick a win sound
   var sounds = [
-    "/static/sound/win.mp3",
-    "/static/sound/win1.mp3",
-    "/static/sound/win3.mp3",
-    "/static/sound/win4.mp3",
+    "static/sound/win.mp3",
+    "static/sound/win1.mp3",
+    "static/sound/win3.mp3",
+    "static/sound/win4.mp3",
   ];
   var sound = sounds[Math.floor(Math.random() * sounds.length)];
 
@@ -162,7 +162,7 @@ function createParticle(x, y, type) {
 
     // case 'ff':
 
-    //   particle.style.backgroundImage = "url('//static//img//icons//logo.png')";
+    //   particle.style.backgroundImage = "url('/static//img//icons//logo.png')";
 
     //   particle.style.border = '1px solid white';
     //   break;
