@@ -355,6 +355,36 @@
         .custom-zoom-button:hover {
             background-color: rgba(74, 85, 104, 0.9); /* Lighter on hover */
         }
+
+            .modal-content {
+                position: relative;
+                /* Add background image */
+                background-image: url('static/img/plane.jpg');
+                background-size: cover;
+                background-position: center;
+                /* Overlay for darkening and blur */
+                overflow: hidden;
+            }
+
+            .modal-content h2, .modal-content p{
+                color: wheat;
+                font-weight: 900;
+            }
+            .modal-content::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: rgba(36, 51, 75, 0.35); /* dark overlay */
+                backdrop-filter: blur(1px);
+                z-index: 0;
+                /* border-radius: 10px; */
+            }
+            .modal-content > * {
+                position: relative;
+                z-index: 1;
+            }
+            
+
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen bg-gray-900">
@@ -376,6 +406,7 @@
         </div>
 
         <div id="areaSelectionModal" class="modal">
+            
             <div class="modal-content">
                 <h2>Select Your Target Area</h2>
                 <p id="areaSelectionDescription">Choose an area to fly over and bomb targets. Longer maps offer more challenges and potential points!</p>

@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roulette Wheel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- <link href="/static/css/bin/games.min.css" rel="stylesheet">
+    <link href="/static/css/bin/styles-2025-05-01.min.css" rel="stylesheet"> -->
+
+<style>
+
+
+#betting-row{
+    background-color: #198754; ;
+    font-size:1.5em;
+}
+
+.other-outside-bets-container .roulette-cell{
+    width:calc(100%/6);
+}
+
+.roulette-placeholder {
+    visibility: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+.two-to-one-column{
+    width: 125px;
+}
+
+
+.two-to-one-column .roulette-cell{
+    border-radius: .45rem 0 0 .45rem;
+}
+
+
+#roulette-board-scores{
+    /* width: 100px; */
+    height:100%;
+    max-height:700px;
+    overflow-y:scroll;
+    color:white;
+    font-weight:800;
+    font-size:1.25em;
+    text-align:center;
+    /* margin: .1em .2em ; */
+}
+
+
+#roulette-board-scores ul{
+    list-style-type: none;
+    background-color:rgba(0,0,0,.25);
+    padding:0;
+    margin:0;
+}
+
+#roulette-board-scores li{
+    border:1px solid grey;
+    border-radius: 2px;
+    margin: 0 .35em .35em .35em;
+}
+
+canvas{
+    margin-top: -320px;
+}
+
+
+#btn-spin, #btn-clear{
+    display:none;
+}
+
+.can-spin #btn-spin, .can-spin #btn-clear{
+    display:block;
+}
+
+#msg-place-bets{
+    font-size: 1.25em;
+    font-weight:bolder;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.can-spin #msg-place-bets{
+    display:none;
+}
+
+
+/* Rolling number container */
+.rolling-number {
+  text-align: right;
+  color:gold;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  height: 1.5em;
+  width: 4ch;
+  vertical-align: bottom;
+}
+
+/* Optional: add fade on top and bottom using a mask */
+.rolling-number::before,
+.rolling-number::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 0.35em;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.roulette-cell.bet {
+    border-color: gold; /* Visual feedback on drop */
+    position: relative; /* Required for absolute positioning the badge */
+}
+
+
+.roulette-cell.bet::after {
+  content: attr(data-bet-value); /* Pull the value from data-bet-value */
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  background-color: #dc3545; /* Bootstrap red */
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.roulette-cell.bet.win::after {
+    background-color: goldenrod;
+    font-size: 14px;
+}
+
+.rolling-number::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), transparent);
+}
+
+.rolling-number::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.8), transparent);
+}
+
+/* Each rolling value */
+.rolling-number span {
+  display: block;
+  position: absolute;
+  width: 100%;
+  left: 0;
+  text-align: right;
+  top: 0;
+  opacity: 1;
+  filter: blur(0px);
+  transition:
+    top 0.4s ease-in-out,
+    opacity 0.4s ease-in-out,
+    filter 0.4s ease-in-out;
+}
+
+    body {
+        margin:0 1em 0 1em;
+        font-family: 'Inter', sans-serif;
+        background-color: #1a202c; /* Dark background */
+        min-height: 100vh;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: hidden;
+    }
+
+    #roulette-wheel {
+        max-height: 100vh;
+        opacity: 1;
+        transition: opacity 1.25s ease-in-out;
+    }
+
+    #roulette-board {
+        max-height: 100vh;
+        opacity: 0;
+        transition: opacity 1.25s ease-in-out;
+    }
+
+    .canvas-wrapper {
+      transform-style: preserve-3d;
+      transform: rotateX(60deg); /* Tilt the canvas backward */
+    }
+
+    /* Define roulette colors */
+    .roulette-green {
+        background-color: #10B981; /* Emerald green */
+    }
+    .roulette-red {
+        background-color: #EF4444; /* Red */
+    }
+    .roulette-black {
+        background-color: #1F2937; /* Dark gray/black */
+    }
+    .roulette-grey {
+        background-color: #4B5563; /* Medium grey for outside bets */
+    }
+
+    /* Cell base styling */
+    .roulette-cell {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid white;
+        color: white;
+        font-weight: bold;
+        font-size: 0.875rem; /* text-sm */
+        height: 2.75rem; /* Consistent height for most cells */
+        /* flex-shrink: 0; */
+        text-align: center;
+
+    }
+
+    .number-grid-container .roulette-cell{
+        border: 1px solid #6B7280; /* Grey border */
+        border-radius: 0.25rem; /* Rounded corners for cells */
+    }
+
+    .roulette-cell.win{
+        /* Highlight color for winning cell */
+        /*border-color: #FBBF24; */
+        font-weight:bolder;
+        font-size:1.5rem;
+        background-color: goldenrod;
+    }
+
+    /* Specific height for 0 and 00 cells to span the 3 number rows */
+    .zero-zero-section .roulette-cell {
+        /* height: calc(3 * 4rem + 2px);  */
+        /* 3 rows * cell height + border */
+        width: 50%; /* Each 0/00 cell takes half the section width */
+    }
+
+    /* Adjustments for the main number grid */
+    .number-grid-container .roulette-cell {
+        flex-grow: 1; /* Allow cells to grow and fill space in rows */
+        flex-basis: 0; /* Ensures even distribution in flex-grow */
+    }
+
+    /* Ensure 2 to 1 cells are below the main grid and have consistent height */
+    .two-to-one-container .roulette-cell {
+        height: 3rem; /* Consistent height */
+        flex-grow: 1;
+    }
+
+
+</style>
+
+
+<style>
+    body {
+        font-family: 'Inter', sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        touch-action: none;
+        background-color: #198754;
+        color: #f8f9fa;
+    }
+
+    .board-square {
+        background-color: #2E8B57;
+        border: 4px solid #FFD700;
+        min-height: 200px; /* Increased min-height for insight area */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s ease;
+        border-radius: 0.375rem;
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+    }
+
+    .roulette-cell.drag-over {
+        /* background-color: goldenrod; */
+        filter: brightness(150%)
+
+    }
+
+    .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-start;
+        padding: 5px;
+        overflow-y: auto;
+        max-height: 50%; /* Adjusted max-height */
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .chip {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        cursor: grab;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.3), inset 0 3px 5px rgba(0,0,0,0.25);
+        position: relative;
+        transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.2s ease-out;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        z-index: 10;
+    }
+
+        .chip:active, .chip.dragging-mouse {
+            transform: scale(1.15);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.4), inset 0 3px 5px rgba(0,0,0,0.25);
+            cursor: grabbing;
+            z-index: 1000 !important;
+        }
+
+        /*for when they are actually placed*/
+        .board-square .chip {
+            width: 36px;
+            height: 36px;
+            font-size: 0.8rem;
+            margin: 3px;
+            margin-right: -24px;
+            cursor: default !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 1px 2px rgba(0,0,0,0.15);
+            z-index: 1;
+        }
+
+        .chip-value-1 { background-color: #E74C3C; border: 3px solid #C0392B; }
+        .chip-value-5 { background-color: #3498DB; border: 3px solid #2980B9; }
+        .chip-value-10 { background-color: #2ECC71; border: 3px solid #27AE60; }
+        .chip-value-25 { background-color: #34495E; border: 3px solid #2C3E50; }
+
+        .chip-inner-ring {
+            width: 70%;
+            height: 70%;
+            border-radius: 50%;
+            border: 2px dashed rgba(255,255,255,0.4);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            transition: display 0.1s;
+        }
+
+        .chip-stack-pile {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            /*margin-bottom: 0.5rem;*/
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chip-stack-pile .chip {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .chip-stack-pile .chip.draggable-source { z-index: 30; }
+        .chip-stack-pile .chip.decorative-1 { transform: translate(3px, -3px) scale(0.98); opacity: 0.8; z-index: 20; }
+        .chip-stack-pile .chip.decorative-2 { transform: translate(6px, -6px) scale(0.96); opacity: 0.6; z-index: 10; }
+
+        .touch-drag-clone {
+            position: fixed;
+            pointer-events: none;
+            z-index: 2000;
+            opacity: 0.85;
+            scale:0.5;
+        }
+
+        .total-display-area {
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            width: 80%;
+            text-align: center;
+            /* margin-top: auto; Removed to allow insight area below */
+        }
+        .total-text {
+            color: #FFD700;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .insight-area {
+            position: absolute;    
+            z-index: 500;
+            width: 100%;        
+            text-align: center;
+            border-radius: 1em;;
+            margin: .25em;;
+            padding: 5em;
+            color: #FFD700;
+            background-color: rgba(0, 0, 0, 0.8);
+            font-size: 1.15rem;
+            font-weight: bolder;                        
+        }
+
+        .btn-insight {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        @media (min-width: 992px) {
+            .total-text { font-size: 1.5rem; }
+            .chip { width: 60px; height: 60px; }
+            .chip-stack-pile { width: 70px; height: 70px; }
+            .chip { width: 40px; height: 40px; }
+            /* .insight-area { font-size: 0.85rem; min-height: 45px; } */
+            .btn-insight { font-size: 0.8rem; }
+        }
+
+        @media (max-width: 991px) {
+
+            /*// we remove a row on small screens*/
+
+            /*canvas{margin-top: -120px;}*/
+
+            .betting-row{font-size: .7em;}
+            .total-text { font-size: .7em; }
+            .chip { width: 40px; height: 40px; }
+
+            #roulette-board-scores{font-size:.8em}
+            #chipStacksContainer {font-size:.6em;}
+
+            .chip-stack-pile { width: 55px; height: 55px; }
+            /*.board-square .chip { width: 40px; height: 40px; }*/
+            /* .insight-area { font-size: 0.85rem; min-height: 45px; } */
+
+            .btn-insight { font-size: 0.8rem; }
+        }
+
+        .selection-custom::selection {
+            background-color: #FFD700;
+            color: #146c43;
+        }
+
+</style>
+
+</head>
+
+<body class="bg-dark text-white min-vh-100 p-lg-4 m-0 m-lg-5 position-relative">
+
+    <div id="roulette-wheel-container" class="position-absolute top-0 start-0 w-100">
+        <div class="position-relative">
+            <!-- WHEEL -->
+            <div id="roulette-wheel">
+                <div id="wheel" class="position-relative d-flex justify-content-center align-items-center" style="width: 100%; height: 100%;">
+                    <div class="canvas-wrapper">
+                        <canvas id="canvas" width="900" height="900">
+                            <p style="color: white; text-align:center">Sorry, your browser doesn't support canvas.</p>
+                        </canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOARD -->
+    <div  id = "roulette-board" class="position-absolute top-0 start-0 w-100">
+        <div class="roulette-board-container position-relative mx-auto row g-0 gap-1 bg-dark">
+
+            <!-- START: New wrapper for left column and number grid -->
+            <div class="col">
+                <div class="row g-0">
+
+                    <!-- LEFT COLUMN: Two-to-One as a vertical column -->
+                    <div class="two-to-one-column col-2">
+
+                        <!-- Placeholder for top row -->
+                        <!-- only shown on large screens -->
+
+                        <div class="d-none d-lg-block">
+                            <div class="roulette-cell roulette-placeholder"></div>
+                             <!--Placeholder for dozen row -->
+                            <div class="roulette-cell roulette-placeholder"></div>
+                        </div>
+
+                        <div class="d-lg-none">
+                            <div class="zero-zero-section d-flex flex-row w-100">
+                                <div class="roulette-cell roulette-green rounded-top-left" data-value="0" data-color="green">0</div>
+                                <div class="roulette-cell roulette-green rounded-top-right" data-value="00" data-color="green">00</div>
+                            </div>
+                        </div>
+
+                        <!-- Actual 2 to 1 labels for each row -->
+                        <div class="roulette-cell roulette-grey" data-value="2 to 1 (1st col)">2/1 Col1</div>
+                        <div class="roulette-cell roulette-grey" data-value="2 to 1 (2nd col)">2/1 Col2</div>
+                        <div class="roulette-cell roulette-grey" data-value="2 to 1 (3rd col)">2/1 Col3</div>
+
+                        <!--<div class="roulette-cell roulette-placeholder"></div>-->
+
+                        <div id="btn-clear" class="btn btn-outline-warning fw-bolder my-3 py-3 mx-1">
+                            <i class="bi bi-trash me-1 "></i>
+                            Clear</div>
+
+                        <div id="btn-spin" class="btn btn-outline-success fw-bolder my-3 py-4 mx-1 spin">
+                            <i class="bi bi-record-circle-fill me-1 spinning"></i>
+
+                            Spin</div>
+
+                        <div id="msg-place-bets" class="text-center rounded text-warning mt-5">
+                            <div class="h5 my-2 fw-bolder">Place Your Bets</div>
+                            <div class="fs-12">(double-tap a chip to exchange)</div>
+                        </div>
+
+                    </div>
+
+                    <!--RIGHT COL-->
+                    <div class="col position-relative">
+                        
+                        <div class="insight-area d-none">  
+                            </div>
+                        
+                        <div class="zero-zero-section d-none d-lg-flex flex flex-row w-100  ">
+                            <div class="roulette-cell roulette-green rounded-top-left" data-value="0" data-color="green">0</div>
+                            <div class="roulette-cell roulette-green rounded-top-right" data-value="00" data-color="green">00</div>
+                        </div>
+
+                        <div class="dozen-bets-container d-flex flex-row w-100">
+                            <div class="roulette-cell roulette-grey flex-grow-1" data-value="1st 12">1st 12</div>
+                            <div class="roulette-cell roulette-grey flex-grow-1" data-value="2nd 12">2nd 12</div>
+                            <div class="roulette-cell roulette-grey flex-grow-1" data-value="3rd 12">3rd 12</div>
+                        </div>
+
+                        <!-- RIGHT: Number grid stays the same -->
+                        <div class="number-grid-container d-flex flex-column w-100">
+
+                                <div class="d-flex flex-row w-100">
+                                    <div class="roulette-cell roulette-red" data-value="1" data-color="red">1</div>
+                                    <div class="roulette-cell roulette-black" data-value="4" data-color="black">4</div>
+                                    <div class="roulette-cell roulette-red" data-value="7" data-color="red">7</div>
+                                    <div class="roulette-cell roulette-black" data-value="10" data-color="black">10</div>
+                                    <div class="roulette-cell roulette-black" data-value="13" data-color="black">13</div>
+                                    <div class="roulette-cell roulette-red" data-value="16" data-color="red">16</div>
+                                    <div class="roulette-cell roulette-red" data-value="19" data-color="red">19</div>
+                                    <div class="roulette-cell roulette-black" data-value="22" data-color="black">22</div>
+                                    <div class="roulette-cell roulette-red" data-value="25" data-color="red">25</div>
+                                    <div class="roulette-cell roulette-black" data-value="28" data-color="black">28</div>
+                                    <div class="roulette-cell roulette-black" data-value="31" data-color="black">31</div>
+                                    <div class="roulette-cell roulette-red" data-value="34" data-color="red">34</div>
+                                </div>
+                                <div class="d-flex flex-row w-100">
+                                    <div class="roulette-cell roulette-black" data-value="2" data-color="black">2</div>
+                                    <div class="roulette-cell roulette-red" data-value="5" data-color="red">5</div>
+                                    <div class="roulette-cell roulette-black" data-value="8" data-color="black">8</div>
+                                    <div class="roulette-cell roulette-black" data-value="11" data-color="black">11</div>
+                                    <div class="roulette-cell roulette-red" data-value="14" data-color="red">14</div>
+                                    <div class="roulette-cell roulette-black" data-value="17" data-color="black">17</div>
+                                    <div class="roulette-cell roulette-black" data-value="20" data-color="black">20</div>
+                                    <div class="roulette-cell roulette-red" data-value="23" data-color="red">23</div>
+                                    <div class="roulette-cell roulette-black" data-value="26" data-color="black">26</div>
+                                    <div class="roulette-cell roulette-black" data-value="29" data-color="black">29</div>
+                                    <div class="roulette-cell roulette-red" data-value="32" data-color="red">32</div>
+                                    <div class="roulette-cell roulette-black" data-value="35" data-color="black">35</div>
+                                </div>
+                                <div class="d-flex flex-row w-100">
+                                    <div class="roulette-cell roulette-red" data-value="3" data-color="red">3</div>
+                                    <div class="roulette-cell roulette-black" data-value="6" data-color="black">6</div>
+                                    <div class="roulette-cell roulette-red" data-value="9" data-color="red">9</div>
+                                    <div class="roulette-cell roulette-red" data-value="12" data-color="red">12</div>
+                                    <div class="roulette-cell roulette-black" data-value="15" data-color="black">15</div>
+                                    <div class="roulette-cell roulette-red" data-value="18" data-color="red">18</div>
+                                    <div class="roulette-cell roulette-red" data-value="21" data-color="red">21</div>
+                                    <div class="roulette-cell roulette-black" data-value="24" data-color="black">24</div>
+                                    <div class="roulette-cell roulette-red" data-value="27" data-color="red">27</div>
+                                    <div class="roulette-cell roulette-red" data-value="30" data-color="red">30</div>
+                                    <div class="roulette-cell roulette-black" data-value="33" data-color="black">33</div>
+                                    <div class="roulette-cell roulette-red" data-value="36" data-color="red">36</div>
+                                </div>
+                        </div>
+
+                        <div class="other-outside-bets-container d-flex flex-row w-100">
+                            <div class="roulette-cell roulette-grey flex-grow-1" data-value="1-18">1-18</div>
+                            <div class="roulette-cell roulette-grey flex-grow-1" data-value="Even">EVEN</div>
+                            <div class="roulette-cell roulette-red flex-grow-1" data-value="Red" data-color="red">RED</div>
+                            <div class="roulette-cell roulette-black flex-grow-1" data-value="Black" data-color="black">BLACK</div>
+                            <div class="roulette-cell roulette-grey flex-grow-1" data-value="Odd">ODD</div>
+                            <div class="roulette-cell roulette-grey flex-grow-1" data-value="19-36">19-36</div>
+                        </div>
+
+                        <div id="betting-row" class="row g-0 gap-2 px-2 mt-1 rounded">
+
+                            <div class="col col-2 my-auto" >
+                                <div class="d-flex align-content-between mb-2">
+                                    <div>Pot: </div>
+                                    <div class="w-100 text-end"><span id="betting-pot" class="rolling-number p-1"><span class="mt-1"></span></span>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-content-between">
+                                    <div>Spins:</div>
+                                    <div class="w-100 text-end"><span id="spins" class="rolling-number p-1"><span></span></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col ms-auto">
+                                <div id="chipStacksContainer" class="d-flex flex-wrap justify-content-around align-items-end">
+                                    </div>
+                            </div>
+
+                        </div>
+                        
+
+                </div>
+
+            <div id ="roulette-board-scores" class="col col-1 col-lg-2">
+                <div>spins</div>
+                <ul>
+                </ul>
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/winwheel@1.0.1/dist/Winwheel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/latest/TweenMax.min.js"></script>
+<!--<script src="F:\Users\conor\Documents\Python Scripts\NewSite\ff\/static/js/games/roulette.js"></script>-->
+
+<script src="/static/js/fireworks.js"></script>
+<script src="/static/js/keyboard.js"></script>
+<script src="/static/js/roulette-game.js"></script>
+
+
+ <script>
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    game = new RouletteGame();
+
+    // const targets = document.querySelectorAll('.roulette-cell');
+
+    targets = game.targets
+
+    // const chipStacksContainer = document.getElementById('chipStacksContainer');
+
+    // Inital pot of chips
+    const chipDenominations = [
+        { value: 1, colorClass: 'chip-value-1', label: '$1', quantity: 5 },
+        { value: 5, colorClass: 'chip-value-5', label: '$5', quantity: 3 },
+        { value: 10, colorClass: 'chip-value-10', label: '$10', quantity: 3 },
+        { value: 25, colorClass: 'chip-value-25', label: '$25', quantity: 2 },
+    ];
+
+    let draggedChipData = null;
+    let touchDraggedChip = null;
+    let touchDragOffsetX = 0;
+    let touchDragOffsetY = 0;
+
+    // --- Initialize Board Squares ---
+    // Desktop Drag Drop
+
+    targets.forEach((target, index) => {
+
+        target.addEventListener('dragover', (e) => {
+            console.log('Drag over square:', target);
+            e.preventDefault();
+            target.classList.add('drag-over');
+        });
+
+        target.addEventListener('dragleave', () => {
+            target.classList.remove('drag-over');
+        });
+
+        target.addEventListener('drop', (e) => {
+            e.preventDefault();
+            console.log('target Drop on square:', target, draggedChipData);
+            target.classList.remove('drag-over');
+            if (draggedChipData) {
+                addChipToSquare(target, draggedChipData.value, draggedChipData.colorClass, draggedChipData.originalDenomValue);
+            }
+        });
+
+    });
+
+    // DESKTOP this adds the hover effect to the targets
+
+    // targets.forEach((square, index) => {
+    //     square.addEventListener('dragover', (e) => { e.preventDefault(); square.classList.add('drag-over'); });
+    //     square.addEventListener('dragleave', () => { square.classList.remove('drag-over'); });
+
+    //     // square.addEventListener('drop', (e) => {
+    //     //     e.preventDefault();
+    //     //     square.classList.remove('drag-over');
+    //     //     if (draggedChipData) {
+    //     //         console.log('Dropped on square 2:', square, draggedChipData);
+    //     //         addChipToSquare(square, draggedChipData.value, draggedChipData.colorClass, draggedChipData.originalDenomValue);
+    //     //     }
+
+    //     // });
+    // });
+
+
+    // --- Initialize Chip Stacks (same as before) ---
+    chipDenominations.forEach((denom, index) => {
+
+        const stackContainer = document.createElement('div');
+        stackContainer.classList.add('d-flex', 'flex-column', 'align-items-center', 'm-2');
+
+        const chipPile = document.createElement('div');
+        chipPile.classList.add('chip-stack-pile');
+        chipPile.dataset.denomValue = denom.value;
+
+        const draggableChipElement = document.createElement('div');
+        draggableChipElement.classList.add('chip', denom.colorClass, 'draggable-source');
+        draggableChipElement.dataset.value = denom.value;
+        draggableChipElement.dataset.colorClass = denom.colorClass;
+        draggableChipElement.dataset.denomIndex = index;
+
+        const innerRing = document.createElement('div');
+        innerRing.classList.add('chip-inner-ring');
+        draggableChipElement.appendChild(innerRing);
+        chipPile.appendChild(draggableChipElement);
+
+        for (let j = 0; j < 2; j++) {
+            const decoChip = document.createElement('div');
+            decoChip.classList.add('chip', denom.colorClass, `decorative-${j+1}`);
+            decoChip.innerHTML = "&nbsp;";
+            chipPile.appendChild(decoChip);
+        }
+
+        updateStackVisual(chipPile, denom);
+
+        draggableChipElement.addEventListener('dragstart', (e) => {
+            const chipElement = e.currentTarget;
+            const currentDenom = chipDenominations[parseInt(chipElement.dataset.denomIndex)];
+            if (!currentDenom || currentDenom.quantity <= 0) {
+                e.preventDefault(); return;
+            }
+            draggedChipData = {
+                value: currentDenom.value,
+                colorClass: chipElement.dataset.colorClass,
+                originalDenomValue: currentDenom.value
+            };
+            chipElement.classList.add('dragging-mouse');
+        });
+
+        draggableChipElement.addEventListener('dragend', (e) => {
+            e.currentTarget.classList.remove('dragging-mouse');
+        });
+
+        draggableChipElement.addEventListener('touchstart', (e) => {
+
+            // this will fire if the user double taps the chip
+            // detectDoubleTap(500)
+
+            // console.log('Touch start event:', e);
+            const originalChip = e.currentTarget;
+            const currentDenom = chipDenominations[parseInt(originalChip.dataset.denomIndex)];
+            if (!currentDenom || currentDenom.quantity <= 0) return;
+            e.preventDefault();
+
+            touchDraggedChip = originalChip.cloneNode(true);
+            touchDraggedChip.classList.remove('draggable-source');
+            touchDraggedChip.classList.add('touch-drag-clone');
+            touchDraggedChip.style.width = originalChip.offsetWidth + 'px';
+            touchDraggedChip.style.height = originalChip.offsetHeight + 'px';
+
+            const touch = e.touches[0];
+            const rect = originalChip.getBoundingClientRect();
+            touchDragOffsetX = touch.clientX - rect.left;
+            touchDragOffsetY = touch.clientY - rect.top;
+
+            touchDraggedChip.style.left = (touch.clientX - touchDragOffsetX) + 'px';
+            touchDraggedChip.style.top = (touch.clientY - touchDragOffsetY) + 'px';
+
+            document.body.appendChild(touchDraggedChip);
+            draggedChipData = {
+                value: currentDenom.value,
+                colorClass: originalChip.dataset.colorClass,
+                originalDenomValue: currentDenom.value
+            };
+        }, { passive: false });
+
+        draggableChipElement.addEventListener('dblclick', (e) => {
+            cashinChips(draggableChipElement.parentElement);
+        });
+
+        // this is our custom double tap event
+        draggableChipElement.addEventListener("doubletap", (event) => {
+            console.log('Double tap detected on pile:', event.target.parentElement.parentElement);
+            // THIS TARGET IS THE INNER RING
+            cashinChips(event.target.parentElement.parentElement);
+        });
+
+        const denominationLabel = document.createElement('span');
+        denominationLabel.classList.add('text-warning', 'fw-semibold', 'mt-1');
+
+
+        denominationLabel.textContent =  `${denom.label}x${denom.quantity}`;
+
+        stackContainer.appendChild(chipPile);
+        stackContainer.appendChild(denominationLabel);
+        chipStacksContainer.appendChild(stackContainer);
+
+    });
+
+        // --- Global Touch Listeners  ---
+        document.addEventListener("touchstart", detectDoubleTap(500));
+
+        document.addEventListener('touchmove', (e) => {
+
+            if (touchDraggedChip) {
+                // console.log('Touch move event:', touchDraggedChip);
+                e.preventDefault();
+                const touch = e.touches[0];
+                touchDraggedChip.style.left = (touch.clientX - touchDragOffsetX) + 'px';
+                touchDraggedChip.style.top = (touch.clientY - touchDragOffsetY) + 'px';
+                const targetElement = document.elementFromPoint(touch.clientX, touch.clientY);
+                targets.forEach(sq => sq.classList.remove('drag-over'));
+                if (targetElement) {
+                    const closestSquare = targetElement.closest('.roulette-cell');
+                    if (closestSquare) {
+                        closestSquare.classList.add('drag-over');
+                    }
+                }
+            }
+        }, { passive: false });
+
+            document.addEventListener('touchend', (e) => {
+
+                console.log('Document touchend event:', e);
+
+                if (touchDraggedChip) {
+                    // console.log('Touch end event:', touchDraggedChip);
+                    const touch = e.changedTouches[0];
+                    const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+
+                    targets.forEach(sq => sq.classList.remove('drag-over'));
+
+                    if (dropTarget) {
+                        const targetSquare = dropTarget.closest('.roulette-cell');
+                        if (targetSquare && draggedChipData) {
+                            addChipToSquare(targetSquare, draggedChipData.value, draggedChipData.colorClass, draggedChipData.originalDenomValue);
+                        }
+                    }
+
+                    if (document.body.contains(touchDraggedChip)) { // Check if still in body
+                        document.body.removeChild(touchDraggedChip);
+                    }
+                    touchDraggedChip = null;
+                    draggedChipData = null;
+                }
+            });
+
+            // --- Helper to Update Stack Visuals --
+            function updateStackVisual(chipPileElement, denomination) {
+
+                const draggableChip = chipPileElement.querySelector('.draggable-source');
+                const decorativeChips = Array.from(chipPileElement.querySelectorAll('.chip.decorative-1, .chip.decorative-2'));
+
+                if (!draggableChip) return;
+
+                const innerRing = draggableChip.querySelector('.chip-inner-ring');
+                let textNode = Array.from(draggableChip.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+                 if (!textNode && innerRing) { // If only innerRing exists, create text node before it
+                    textNode = document.createTextNode('');
+                    draggableChip.insertBefore(textNode, innerRing);
+                } else if (!textNode && !innerRing) { // If neither exists, create text node then ring
+                    textNode = document.createTextNode('');
+                    draggableChip.appendChild(textNode);
+                }
+
+
+                if (denomination.quantity <= 0) {
+                    draggableChip.draggable = false;
+                    draggableChip.style.opacity = '0.4';
+                    draggableChip.style.cursor = 'not-allowed';
+                    if (textNode) textNode.textContent = 'X';
+                    if (innerRing) innerRing.style.display = 'none';
+                } else {
+
+                    draggableChip.draggable = true;
+                    draggableChip.style.opacity = '1';
+                    draggableChip.style.cursor = 'grab';
+
+                    if (textNode) textNode.textContent = denomination.value
+                    else {
+                        textNode = document.createTextNode(denomination.value);
+                        draggableChip.appendChild(textNode);
+                    }
+                    if (innerRing) innerRing.style.display = 'block';
+                    else { // Recreate inner ring if it was removed or never added
+                        const newRing = document.createElement('div'); newRing.classList.add('chip-inner-ring');
+                        draggableChip.appendChild(newRing);
+                    }
+                }
+
+                const stackToUpdate = chipStacksContainer.querySelector(`.chip-stack-pile[data-denom-value="${denomination.value}"]`);
+                if (stackToUpdate) {
+                    chipPileElement.parentElement.querySelector('span').textContent = `${denomination.label}x${denomination.quantity}`;
+                }
+
+
+
+                if (decorativeChips.length > 0) decorativeChips[0].style.display = denomination.quantity >= 2 ? 'flex' : 'none';
+                if (decorativeChips.length > 1) decorativeChips[1].style.display = denomination.quantity >= 3 ? 'flex' : 'none';
+            }
+
+            // --- Helper to Add Chip to Square ---
+            function addChipToSquare(squareElement, value, colorClass, originalDenomValue) {
+
+                game.placeBet(squareElement, value);
+
+                console.log('Adding chip to square:', squareElement, value, colorClass, originalDenomValue);
+
+                const newChip = document.createElement('div');
+                newChip.classList.add('chip', colorClass);
+
+                const chipText = document.createTextNode(value);
+                newChip.appendChild(chipText);
+                newChip.dataset.value = value;
+
+                const placedInnerRing = document.createElement('div');
+                placedInnerRing.classList.add('chip-inner-ring');
+                newChip.appendChild(placedInnerRing);
+
+                // squareElement.querySelector('.chip-container').appendChild(newChip);
+
+                let currentTotal = parseInt(squareElement.dataset.total);
+                currentTotal += value;
+                squareElement.dataset.total = currentTotal;
+
+                // squareElement.querySelector('.total-text').textContent = `$${currentTotal}`;
+
+                if (originalDenomValue !== undefined) {
+                    const chipDenomData = chipDenominations.find(d => d.value === originalDenomValue);
+                    if (chipDenomData && chipDenomData.quantity > 0) {
+                        chipDenomData.quantity--;
+                        const stackToUpdate = chipStacksContainer.querySelector(`.chip-stack-pile[data-denom-value="${originalDenomValue}"]`);
+                        if (stackToUpdate) {
+                            updateStackVisual(stackToUpdate, chipDenomData);
+                        }
+                    }
+                }
+                draggedChipData = null;
+
+                
+
+            }
+
+
+
+            function cashinChips(chipElement) {
+
+                denomValue = parseInt(chipElement.dataset.denomValue);
+
+                console.log('Cashing in chips:', chipElement, denomValue);
+
+                if (denomValue) {
+
+                    // we want to decrease this stack by one and distribute the change into lower valued chips
+                    const chipDenomination = chipDenominations.find(d => d.value === denomValue);
+
+                    if (!chipDenomination || chipDenomination.quantity <= 0) {
+                        console.warn('No chips available for denomination:', denomValue);
+                        return;
+                    }
+                    const quantity = 1; // We are cashing in one chip
+                    chipDenomination.quantity -= quantity;
+                    if (chipDenomination.quantity < 0) {
+                        console.warn('Not enough chips to cash in:', denomValue);
+                        chipDenomination.quantity = 0; // Prevent negative quantity
+                        return;
+                    }
+
+                    // 25 becomes 2*10 + 1*5 , 10 becomes 2* 5, 5 becomes 5*1
+                    if (denomValue === 25) {
+                        chipDenominations.find(d => d.value === 10).quantity += 2;
+                        chipDenominations.find(d => d.value === 5).quantity += 1;
+                    } else if (denomValue === 10) {
+                        chipDenominations.find(d => d.value === 5).quantity += 2;
+                    } else if (denomValue === 5) {
+                        chipDenominations.find(d => d.value === 1).quantity += 5;
+                    } else if (denomValue === 1) {
+                        console.warn('Cannot cash in $1 chips');
+                        return;
+                    }
+
+                    console.log('Updated chip denomination:', chipDenominations);
+
+                    chipDenominations.forEach((denom, index) => {
+                        const stackToUpdate = chipStacksContainer.querySelector(`.chip-stack-pile[data-denom-value="${denom.value}"]`);
+                        if (stackToUpdate) {
+                            updateStackVisual(stackToUpdate, denom);
+                        }
+                    });
+
+
+
+                }else{
+                    console.warn('No denomination value found for chip element:', chipElement);
+                    return;
+                }
+            }
+
+            // helper function to detetct double taps
+            function detectDoubleTap(doubleTapMs) {
+
+                let lastTap = 0;
+                let timeout;
+
+                return function(event) {
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - lastTap;
+
+                    if (tapLength > 0 && tapLength < doubleTapMs) {
+                    event.preventDefault();
+                    const doubleTapEvent = new CustomEvent("doubletap", {
+                        bubbles: true,
+                        detail: event,
+                    });
+                    event.target.dispatchEvent(doubleTapEvent);
+                    clearTimeout(timeout);
+                    } else {
+                    timeout = setTimeout(() => clearTimeout(timeout), doubleTapMs);
+                    }
+                    lastTap = currentTime;
+                };
+                }
+
+
+            // document.addEventListener("touchstart", detectDoubleTap(500));
+
+            // document.querySelectorAll(".chip-stack-pile").forEach(pile => {
+            //     console.log('Adding double-click listener to pile:', pile);
+            //     pile.addEventListener('dblclick', (e) => {
+            //         cashinChips(pile);
+            //     });
+
+            //     pile.addEventListener("doubletap", (event) => {
+            //         console.log('Double tap detected on pile:', event.target);
+            //         cashinChips(event.target);
+            //     });
+            // });
+
+
+            function addChips(quantity){
+
+                // work out how many chips of each denomination we need to add
+                const chipStacksContainer = document.getElementById('chipStacksContainer');
+                console.log('Adding chips:', quantity);
+                if (quantity <= 0) {
+                    // console.warn('Invalid quantity to add:', quantity);
+                    return;
+                }
+                // start with the highest denomination and work down
+                for (let i = chipDenominations.length - 1; i >= 0; i--) {
+                    const denom = chipDenominations[i];
+                    if (quantity <= 0) break;
+                    const chipsToAdd = Math.floor(quantity / denom.value);
+
+                    if (chipsToAdd > 0) {
+                        denom.quantity += chipsToAdd;
+                        quantity -= chipsToAdd * denom.value;
+                        const stackToUpdate = chipStacksContainer.querySelector(`.chip-stack-pile[data-denom-value="${denom.value}"]`);
+                        if (stackToUpdate) {
+                            updateStackVisual(stackToUpdate, denom);
+                        }
+                    }
+                }
+                if (quantity > 0) {
+                    console.warn('Could not add all chips, remaining quantity:', quantity);
+                }
+            }
+
+            // Add the addChips function to the game object
+            // This allows other parts of the game to call addChips easily
+            game.addChips = addChips;
+
+    });
+
+document.documentElement.requestFullscreen();
+
+</script>
+
+</html>
