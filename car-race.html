@@ -537,7 +537,7 @@ function createCity() {
                     // 🔽 Add signage to some buildings
                     if (Math.random() < 0.9) {  // 20% chance to get a sign
                         
-                        console.log("font", loadedFont)
+                        // console.log("font", loadedFont)
                         const signText = signs[Math.floor(Math.random() * signs.length)];
                         const textGeo = new THREE.TextGeometry(signText, {
                             font: loadedFont,
@@ -717,7 +717,7 @@ function createCourse() {
             marker.rotation.x = Math.PI / 2;
             marker.visible = false;
 
-            console.log("font check num", loadedFont)
+            // console.log("font check num", loadedFont)
             // // Create the number label
             const numberText = (i).toString();
             const textGeo = new THREE.TextGeometry(numberText, {
@@ -1088,7 +1088,7 @@ function updatePointerArrowNew() {
         // Load font asynchronously and start game only after font is loaded
         fontLoader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
             loadedFont = font;
-            init(); // Start the game only after font is loaded
+            //init(); // Start the game only after font is loaded
         });
 
         
