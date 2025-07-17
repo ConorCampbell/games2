@@ -70,7 +70,7 @@
             font-weight: bold;
         }
         #game-status-overlay {
-            position: absolute;
+/*             position: absolute; */
             top: 0;
             left: 0;
             width: 100%;
@@ -83,6 +83,38 @@
             pointer-events: all;
             z-index: 10;
         }
+
+#game-status-overlay {
+    position: relative;
+    background: url('static/img/car.jpg') center center / cover no-repeat;
+}
+
+#game-status-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.4); /* Adjust alpha to control darkening */
+    z-index: 1;
+}
+
+        #start-screen {
+    position: relative;
+    z-index: 2; /* Above the overlay */
+    margin: 100px auto;
+    padding: 30px 40px;
+    max-width: 400px;
+
+    background: rgba(255, 255, 255, 0.1); /* Slightly translucent */
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+        
         #game-status-overlay h2 {
             font-size: 4em;
             margin-bottom: 20px;
@@ -125,18 +157,17 @@
         </div>
     </div>
 
-    <div id="game-status-overlay" style="background: url('static/img/car.jpg') center center / cover no-repeat;">
-        
-        <div id="start-screen" style="background-color:rgba(0,0,0,.25);">
+    <div id="game-status-overlay" >
+        <div id="start-screen" >
             <h2>Race Challenge</h2>
-            <uL>
+            <ul>
                 <li>
                     follow the reoad markers to 10 checkpoints
                 </li>
                 <li>
                     control your speed and turn using arrow keys
                 </li>
-            </uL>
+            </ul>
             <button id="start-button">Start Race</button>
             <div style="margin-top: 30px;">
                 <label for="difficulty-slider" style="font-size:1.2em; color:#0ff;">Difficulty: <span id="difficulty-value">3</span></label>
