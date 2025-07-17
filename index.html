@@ -14,9 +14,10 @@
       justify-content: center;
       font-family: 'Segoe UI', sans-serif;
     }
+
     .card {
     height: 80vh;
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(10px);
       border: none;
       border-radius: 1rem;
@@ -30,7 +31,7 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-            gap: 1rem;
+            gap: .25rem;
         }
         .card-body .game-btn {
             flex: 1 1 0;
@@ -43,7 +44,7 @@
     }
     
     .game-btn {
-      margin: 1rem 0;
+      margin: .25rem 0;
       height: 4rem;
       padding: 0.75rem 2rem;
       font-size: 1.25rem;
@@ -55,8 +56,6 @@
             z-index: 1;
 
     }
-
-    
 
     
         .game-btn-bg {
@@ -81,26 +80,25 @@
 <body>
 
   <div class="card">
-    <h1 class=" card-header mb-4">🎮 Welcome to GameZone</h1>
+    <h1 class=" card-header mb-1">🎮 Welcome to GameZone</h1>
   
-    <div class="card-body">
-    
-        
-    <div class="btn  game-btn position-relative mb-2" onclick="location.href='car-race.html'">
-      <img src="static/img/car.jpg" alt="" class="game-btn-bg">
-      <span>Race</span>    
-    </div>
+    <div class="card-body p-1">
+              
+      <div class="btn  game-btn position-relative" onclick="location.href='car-race.html'">
+        <img src="static/img/car.jpg" alt="" class="game-btn-bg">
+        <span>Race</span>    
+      </div>
 
-    
-    <div class="btn  game-btn position-relative mb-2" onclick="location.href='bomb-works2.html'">
-      <img src="static/img/plane.jpg" alt="" class="game-btn-bg">
-      <span>Bomb</span>
-    
-    </div>
-    <div class="btn  game-btn position-relative mb-2" onclick="location.href='roulette.html'">
-      <img src="static/img/roulette.jpg" alt="" class="game-btn-bg">
-      <span>Roulette</span>
-    </div>
+      
+      <div class="btn  game-btn position-relative" onclick="location.href='bomb-works2.html'">
+        <img src="static/img/plane.jpg" alt="" class="game-btn-bg">
+        <span>Bomb</span>
+      
+      </div>
+      <div class="btn  game-btn position-relative " onclick="location.href='roulette.html'">
+        <img src="static/img/roulette.jpg" alt="" class="game-btn-bg">
+        <span>Roulette</span>
+      </div>
 
     </div>
 
