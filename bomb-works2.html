@@ -389,6 +389,33 @@
 </head>
 <body class="flex items-center justify-center min-h-screen bg-gray-900">
     <div id="game-container" class="relative">
+
+        <div id="coverPage" class="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-black bg-opacity-80" style="background: url('static/img/plane.jpg') center center / cover no-repeat;">
+            <div class="bg-gray-900 bg-opacity-80 rounded-xl shadow-2xl p-8 max-w-lg w-full flex flex-col items-center relative">
+                <h1 class="text-3xl font-bold text-white mb-4">Plane Bombing Game</h1>
+                <ul class="text-lg text-gray-200 mb-6 list-disc pl-6 text-left w-full space-y-2">
+                    <li>Select a map area to begin your mission.</li>
+                    <li>Use <span class="font-bold">Arrow Up/Down</span> or <span class="font-bold">W/S</span> to move the plane vertically.</li>
+                    <li>Drop bombs with <span class="font-bold">Space</span> or by tapping/clicking the game area.</li>
+                    <li>Hit targets for points. Misses reduce your score.</li>
+                    <li>Zoom the map with <span class="font-bold">Arrow Left/Right</span> or the zoom buttons.</li>
+                    <li>Game ends when all targets are passed or hit.</li>
+                </ul>
+                <button id="coverPageOkBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-xl mt-2 shadow-lg">
+                    OK, Let's Play!
+                </button>
+            </div>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const coverPage = document.getElementById('coverPage');
+            const okBtn = document.getElementById('coverPageOkBtn');
+            okBtn.onclick = function() {
+                coverPage.classList.add('hidden');
+            };
+        });
+        </script>
+
         <div id="score-display">Score: 0 | Hits: 0 | Misses: 0</div>
         <div id="map-canvas-container">
             <div id="leaflet-map"></div>
