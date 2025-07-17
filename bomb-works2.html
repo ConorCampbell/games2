@@ -117,10 +117,7 @@
             align-items: center;
             gap: 15px;
         }
-        .modal-content:before{
-            background: url(background.png) 0 0 repeat;
-            transform: rotate(270deg);
-        }
+        
         
         .modal-content h2 {
             font-size: 1.8rem;
@@ -364,7 +361,10 @@
             .modal-content {
                 position: relative;
                 /* Add background image */
-                
+                background-image: url('static/img/plane.jpg');
+                background-size: cover;
+                background-position: center;
+                                
                 /* Overlay for darkening and blur */
                 overflow: hidden;
             }
@@ -375,12 +375,9 @@
             }
             .modal-content::before {
                 content: "";
-                background-image: url('static/img/plane.jpg');
-                background-size: cover;
-                background-position: center;
                 position: absolute;
                 inset: 0;
-/*                 background: rgba(36, 51, 75, 0.35); /* dark overlay */ */
+                background: rgba(36, 51, 75, 0.35); /* dark overlay */ 
                 backdrop-filter: blur(1px);
                 z-index: 0;
                 /* border-radius: 10px; */
