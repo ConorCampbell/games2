@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plane Bombing Game</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
@@ -23,6 +25,10 @@
         #game-container {
             position: relative;
             background-color: #334155; /* Darker background for game area */
+
+            background: url('static/img/plane.jpg') center bottom / cover no-repeat;            
+            /* background-color: rgba(0, 0, 0, 0.8); fallback dark overlay */
+
             border-radius: 15px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
             overflow: hidden;
@@ -387,29 +393,97 @@
                 z-index: 1;
             }
             
+            .cover-page {
+                position: fixed;
+                inset: 0;
+                z-index: 2000;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background: url('static/img/plane.jpg') center center / cover no-repeat;
+                background-color: rgba(0, 0, 0, 0.8); /* fallback dark overlay */
+            }
+
+            .cover-content {
+                background-color: rgba(31, 41, 55, 0.8); /* dark gray */
+                border-radius: 1rem;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+                padding: 2rem;
+                max-width: 32rem;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                position: relative;
+            }
+
+            .cover-title {
+                font-size: 1.875rem; /* ~text-3xl */
+                font-weight: bold;
+                color: white;
+                margin-bottom: 1rem;
+            }
+
+            .instructions-list {
+                font-size: 1.125rem; /* ~text-lg */
+                color: #e5e7eb; /* ~text-gray-200 */
+                margin-bottom: 1.5rem;
+                padding-left: 1.5rem;
+                text-align: left;
+                width: 100%;
+                list-style-type: disc;
+            }
+
+            .instructions-list li {
+                margin-bottom: 0.5rem;
+            }
+
+            .key {
+                font-weight: bold;
+            }
+
+            .play-button {
+                background-color: #2563eb; /* ~bg-blue-600 */
+                color: white;
+                font-weight: bold;
+                padding: 0.5rem 1.5rem;
+                border-radius: 0.5rem;
+                font-size: 1.25rem;
+                margin-top: 0.5rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                border: none;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+
+            .play-button:hover {
+                background-color: #1d4ed8; /* ~hover:bg-blue-700 */
+            }
 
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen bg-gray-900">
     <div id="game-container" class="relative">
 
-        <div id="coverPage" class="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-black bg-opacity-80" style="background: url('static/img/plane.jpg') center center / cover no-repeat;">
-            <div class="bg-gray-900 bg-opacity-80 rounded-xl shadow-2xl p-8 max-w-lg w-full flex flex-col items-center relative">
-                <h1 class="text-3xl font-bold text-white mb-4">Plane Bombing Game</h1>
-                <ul class="text-lg text-gray-200 mb-6 list-disc pl-6 text-left w-full space-y-2">
+        <div id="coverPage" class="cover-page">
+            <div class="cover-content">
+                <h1 class="cover-title">Plane Bombing Game</h1>
+                <ul class="instructions-list">
                     <li>Select a map area to begin your mission.</li>
-                    <li>Use <span class="font-bold">Arrow Up/Down</span> or <span class="font-bold">W/S</span> to move the plane vertically.</li>
-                    <li>Drop bombs with <span class="font-bold">Space</span> or by tapping/clicking the game area.</li>
+                    <li>Use <span class="key">Arrow Up/Down</span> or <span class="key">W/S</span> to move the plane vertically.</li>
+                    <li>Drop bombs with <span class="key">Space</span> or by tapping/clicking the game area.</li>
                     <li>Hit targets for points. Misses reduce your score.</li>
-                    <li>Zoom the map with <span class="font-bold">Arrow Left/Right</span> or the zoom buttons.</li>
+                    <li>Zoom the map with <span class="key">Arrow Left/Right</span> or the zoom buttons.</li>
                     <li>Game ends when all targets are passed or hit.</li>
                 </ul>
-                <button id="coverPageOkBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-xl mt-2 shadow-lg">
+                <button id="coverPageOkBtn" class="play-button">
                     OK, Let's Play!
                 </button>
             </div>
         </div>
-        <script>
+
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const coverPage = document.getElementById('coverPage');
             const okBtn = document.getElementById('coverPageOkBtn');
@@ -417,7 +491,7 @@
                 coverPage.classList.add('hidden');
             };
         });
-        </script>
+    </script>
 
         <div id="score-display">Score: 0 | Hits: 0 | Misses: 0</div>
         <div id="map-canvas-container">

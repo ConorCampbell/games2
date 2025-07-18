@@ -101,15 +101,15 @@
 #start-screen, #finish-screen {
     position: relative;
     z-index: 2; /* Above the overlay */
-    margin: 100px auto;
+    /* margin: 100px auto; */
     padding: 30px 40px;
-    max-width: 400px;
+    max-width: 420px;
 
     background: rgba(255, 255, 255, 0.1); /* Slightly translucent */
     border-radius: 20px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.18);
     color: #fff;
 }
@@ -117,9 +117,11 @@
         
         #game-status-overlay h2 {
             font-size: 4em;
-            margin-bottom: 20px;
+            margin: 0px;
+            padding: 0px;
             text-shadow: 0 0 15px #0ff;
         }
+
         #game-status-overlay button {
             font-size: 2em;
             padding: 15px 30px;
@@ -134,6 +136,7 @@
             background-color: rgba(0, 255, 255, 0.4);
             box-shadow: 0 0 20px #0ff;
         }
+
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
