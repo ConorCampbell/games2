@@ -482,7 +482,6 @@
                 </button>
             </div>
         </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const coverPage = document.getElementById('coverPage');
@@ -515,14 +514,17 @@
                 <h2>Select Your Target Area</h2>
                 <p id="areaSelectionDescription">Choose an area to fly over and bomb targets. Longer maps offer more challenges and potential points!</p>
                 <div id="areaSelectionButtonsContainer" class="modal-buttons grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    </div>
+                
+                </div>
 
                 <div id="actionButtonsContainer" class="flex flex-col items-center gap-4 hidden">
+<!--                     
                     <button id="getBriefingButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg mt-4">
                         Get Mission Briefing ✨ <span id="briefingLoading" class="hidden loading-spinner"></span>
                     </button>
+              
                     <div id="missionBriefingOutput" class="llm-output hidden"></div>
-
+ -->
                     <button id="finalStartGameButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mt-4">
                         Start Mission!
                     </button>
@@ -535,10 +537,12 @@
                 <h2 id="gameOverTitle">Game Over!</h2>
                 <p id="finalScore">Final Score: 0</p>
                 <p id="proximityResults">Hits: 0 | Misses: 0</p>
+<!-- 
                 <button id="getDebriefingButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg mt-4">
                     Get Debriefing ✨ <span id="debriefingLoading" class="hidden loading-spinner"></span>
                     </button>
                 <div id="debriefingOutput" class="llm-output hidden"></div>
+                 -->
                 <div class="modal-buttons mt-4">
                     <button id="restartGameButton">Play Again</button>
                 </div>
@@ -557,9 +561,11 @@
         const areaSelectionModal = document.getElementById('areaSelectionModal');
         const areaSelectionButtonsContainer = document.getElementById('areaSelectionButtonsContainer');
         const actionButtonsContainer = document.getElementById('actionButtonsContainer');
-        const getBriefingButton = document.getElementById('getBriefingButton');
-        const briefingLoadingSpinner = document.getElementById('briefingLoading');
-        const missionBriefingOutput = document.getElementById('missionBriefingOutput');
+        
+        // const getBriefingButton = document.getElementById('getBriefingButton');
+        // const briefingLoadingSpinner = document.getElementById('briefingLoading');
+        // const missionBriefingOutput = document.getElementById('missionBriefingOutput');
+        
         const finalStartGameButton = document.getElementById('finalStartGameButton');
 
         const gameOverModal = document.getElementById('gameOverModal');
@@ -998,9 +1004,10 @@ const gameAreas = [
             plane.targetTiltAngle = 0;
 
             // Clear and hide mission briefing related elements
-            missionBriefingOutput.textContent = '';
-            missionBriefingOutput.classList.add('hidden');
-            briefingLoadingSpinner.classList.add('hidden');
+            // missionBriefingOutput.textContent = '';
+            // missionBriefingOutput.classList.add('hidden');
+            // briefingLoadingSpinner.classList.add('hidden');
+            
             actionButtonsContainer.classList.add('hidden'); // Hide briefing/start game buttons
 
             // Reset selected area button styles
@@ -1017,21 +1024,22 @@ const gameAreas = [
             // Event listener for restarting the game
             restartGameButton.onclick = () => {
                 hideModal(gameOverModal); // Hide game over modal
-                debriefingOutput.textContent = ''; // Clear debriefing output
-                debriefingOutput.classList.add('hidden');
+                // debriefingOutput.textContent = ''; // Clear debriefing output
+                // debriefingOutput.classList.add('hidden');
                 initGame(); // Re-initialize the game
             };
 
             // Event listener for getting mission briefing from Gemini API
-            getBriefingButton.onclick = () => {
-                if (selectedGameArea) {
-                    const prompt = `Generate a short, creative, and dramatic mission briefing for a bombing run over a game area named '${selectedGameArea.name}' described as '${selectedGameArea.description}'. Focus on the challenge and objective. Keep it under 100 words.`;
-                    callGeminiAPI(prompt, missionBriefingOutput, briefingLoadingSpinner);
-                } else {
-                    missionBriefingOutput.textContent = "Please select an area first to get a briefing.";
-                    missionBriefingOutput.classList.remove('hidden');
-                }
-            };
+            
+            // getBriefingButton.onclick = () => {
+            //     if (selectedGameArea) {
+            //         const prompt = `Generate a short, creative, and dramatic mission briefing for a bombing run over a game area named '${selectedGameArea.name}' described as '${selectedGameArea.description}'. Focus on the challenge and objective. Keep it under 100 words.`;
+            //         callGeminiAPI(prompt, missionBriefingOutput, briefingLoadingSpinner);
+            //     } else {
+            //         missionBriefingOutput.textContent = "Please select an area first to get a briefing.";
+            //         missionBriefingOutput.classList.remove('hidden');
+            //     }
+            // };
 
             // Event listener for finally starting the game after area selection
             finalStartGameButton.onclick = () => {
@@ -1070,8 +1078,8 @@ const gameAreas = [
                     button.classList.add('bg-green-500', 'hover:bg-green-600');
                     document.getElementById('areaSelectionDescription').textContent = `You've selected: ${area.name}. ${area.description}`;
                     // Clear and hide briefing output when a new area is selected
-                    missionBriefingOutput.textContent = '';
-                    missionBriefingOutput.classList.add('hidden');
+                    // missionBriefingOutput.textContent = '';
+                    // missionBriefingOutput.classList.add('hidden');
                     actionButtonsContainer.classList.remove('hidden'); // Show briefing/start game buttons
                 };
                 areaSelectionButtonsContainer.appendChild(button); // Add button to container
@@ -1549,10 +1557,11 @@ const gameAreas = [
             showModal(gameOverModal); // Show game over modal
 
             // Event listener for getting debriefing from Gemini API
-            getDebriefingButton.onclick = () => {
-                const prompt = `Generate a concise, encouraging, or reflective debriefing for a pilot who completed a bombing mission. Their final score was ${score} points, with ${hits} targets hit and ${misses} bombs missed. Suggest an improvement or a highlight based on their performance. Keep it under 100 words.`;
-                callGeminiAPI(prompt, debriefingOutput, debriefingLoadingSpinner);
-            };
+            // getDebriefingButton.onclick = () => {
+            //     const prompt = `Generate a concise, encouraging, or reflective debriefing for a pilot who completed a bombing mission. Their final score was ${score} points, with ${hits} targets hit and ${misses} bombs missed. Suggest an improvement or a highlight based on their performance. Keep it under 100 words.`;
+            //     callGeminiAPI(prompt, debriefingOutput, debriefingLoadingSpinner);
+            // };
+            
         }
 
         function showModal(modalElement) {
