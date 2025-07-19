@@ -461,6 +461,89 @@
                 background-color: #1d4ed8; /* ~hover:bg-blue-700 */
             }
 
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+/* Modal content box */
+/* .modal-content {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+ */
+/* Title and description */
+.modal-title {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.modal-description {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Responsive grid for area selection buttons */
+.buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media (min-width: 768px) {
+    .buttons-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .buttons-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Action buttons container */
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+    
+    /* Start button styling */
+    .start-button {
+        background-color: #2563eb;
+        color: white;
+        font-weight: bold;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        margin-top: 1rem;
+        transition: background-color 0.3s ease;
+    }
+    
+    .start-button:hover {
+        background-color: #1e40af;
+    }
+    
+    /* Optional: hidden utility */
+    .hidden {
+        display: none !important;
+    }
+            
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen bg-gray-900">
@@ -509,23 +592,26 @@
         </div>
 
         <div id="areaSelectionModal" class="modal">
-            
             <div class="modal-content">
-                <h2>Select Your Target Area</h2>
-                <p id="areaSelectionDescription">Choose an area to fly over and bomb targets. Longer maps offer more challenges and potential points!</p>
-                <div id="areaSelectionButtonsContainer" class="modal-buttons grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                
+                <h2 class="modal-title">Select Your Target Area</h2>
+                <p id="areaSelectionDescription" class="modal-description">
+                    Choose an area to fly over and bomb targets. Longer maps offer more challenges and potential points!
+                </p>
+        
+                <div id="areaSelectionButtonsContainer" class="buttons-grid">
+                    <!-- Buttons will be dynamically added here -->
                 </div>
-
-                <div id="actionButtonsContainer" class="flex flex-col items-center gap-4 hidden">
-<!--                     
-                    <button id="getBriefingButton" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg mt-4">
-                        Get Mission Briefing ✨ <span id="briefingLoading" class="hidden loading-spinner"></span>
+        
+                <div id="actionButtonsContainer" class="action-buttons hidden">
+                    <!--
+                    <button id="getBriefingButton" class="briefing-button">
+                        Get Mission Briefing ✨ <span id="briefingLoading" class="loading-spinner hidden"></span>
                     </button>
-              
+        
                     <div id="missionBriefingOutput" class="llm-output hidden"></div>
- -->
-                    <button id="finalStartGameButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mt-4">
+                    -->
+        
+                    <button id="finalStartGameButton" class="start-button">
                         Start Mission!
                     </button>
                 </div>
@@ -543,7 +629,7 @@
                     </button>
                 <div id="debriefingOutput" class="llm-output hidden"></div>
                  -->
-                <div class="modal-buttons mt-4">
+                <div class="modal-buttons">
                     <button id="restartGameButton">Play Again</button>
                 </div>
             </div>
