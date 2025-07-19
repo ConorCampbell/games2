@@ -6,9 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plane Bombing Game</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
+<!--     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
@@ -201,7 +199,7 @@
         .target-icon {
             background-color: #10b981; /* Green */
             border-radius: 50%;
-            display: flex;
+            display: flex;    
             justify-content: center;
             align-items: center;
             font-weight: bold;
@@ -514,6 +512,10 @@
     }
 }
 
+        button.selected{
+            background-color:green;
+        }
+        
 /* Action buttons container */
 .action-buttons {
     display: flex;
@@ -1158,10 +1160,11 @@ const gameAreas = [
                 button.title = area.description; // Tooltip for description
                 button.onclick = () => {
                     selectedGameArea = area; // Set the selected game area
+                    
                     // Remove selected styling from all buttons
-                    areaSelectionButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('bg-green-500', 'hover:bg-green-600'));
+                    areaSelectionButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
                     // Add selected styling to the clicked button
-                    button.classList.add('bg-green-500', 'hover:bg-green-600');
+                    button.classList.add('route-button selected');
                     document.getElementById('areaSelectionDescription').textContent = `You've selected: ${area.name}. ${area.description}`;
                     // Clear and hide briefing output when a new area is selected
                     // missionBriefingOutput.textContent = '';
