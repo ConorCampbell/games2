@@ -1099,7 +1099,7 @@ const gameAreas = [
             actionButtonsContainer.classList.add('hidden'); // Hide briefing/start game buttons
 
             // Reset selected area button styles
-            areaSelectionButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('bg-green-500', 'hover:bg-green-600'));
+            areaSelectionButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
             // Reset area description
             document.getElementById('areaSelectionDescription').textContent = "Choose an area to fly over and bomb targets. Longer maps offer more challenges and potential points!";
 
@@ -1164,7 +1164,7 @@ const gameAreas = [
                     // Remove selected styling from all buttons
                     areaSelectionButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
                     // Add selected styling to the clicked button
-                    button.classList.add('route-button selected');
+                    button.classList.add('selected');
                     document.getElementById('areaSelectionDescription').textContent = `You've selected: ${area.name}. ${area.description}`;
                     // Clear and hide briefing output when a new area is selected
                     // missionBriefingOutput.textContent = '';
