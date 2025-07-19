@@ -466,7 +466,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: 1900;
 }
 
 /* Modal content box */
@@ -525,8 +525,11 @@
 }
     
     /* Start button styling */
-    .start-button {
+    .start-button{
         background-color: #2563eb;
+    }
+    
+    button  {
         color: white;
         font-weight: bold;
         padding: 0.5rem 1rem;
@@ -536,7 +539,11 @@
         margin-top: 1rem;
         transition: background-color 0.3s ease;
     }
-    
+
+    button:hover {
+        background-color: #1e40af;
+    }
+        
     .start-button:hover {
         background-color: #1e40af;
     }
