@@ -11,9 +11,23 @@
 <style>
     html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:#f5f5f5}
     #app{display:flex;flex-direction:column;height:100%}
-    #header{background:#007bff;color:#fff;padding:12px 8px;text-align:center;position:relative;z-index:1000}
+    #header{
+        background:#007bff;color:#fff;padding:12px 8px;text-align:center;position:relative;
+        z-index:1000;
+        display:flex;
+        flex-direction:row;
+        justify-content: around;
+
+    }
+
     #score{font-size:1.8rem;font-weight:bold;margin-bottom:6px}
-    #countryInput{width:90%;max-width:320px;padding:8px 10px;font-size:1.1rem;border:none;border-radius:4px}
+    #countryInput{
+        width:90%;max-width:320px;
+        padding:8px 10px;
+        margin:2px 8px;
+        font-size:1.1rem;
+        border:none;
+        border-radius:4px}
     #map{flex:1;width:100%}
 
     /* flying word animation */
@@ -25,14 +39,20 @@
         border-radius:4px;
         pointer-events:none;
         z-index:9999;
-        font-size:18px;
-        transition:transform 1s ease-out,opacity 1s ease-out;
+        font-size:24px;
+        transition:transform 1.5s ease-out,opacity 2s ease-out;
     }
 
     /* marker flash */
     .flash{
-        animation:flash 0.6s 3;
+        animation:flash 0.6s 5;
     }
+    .found{
+        color:red;
+     background:red;
+        font-size:2em;
+    }
+
     @keyframes flash{
         0%,100%{filter:brightness(1)}
         50%{filter:brightness(2.5)}
@@ -43,8 +63,9 @@
 <body>
 <div id="app">
     <div id="header">
-        <div id="score">Score: 0</div>
+
         <input id="countryInput" type="text" placeholder="Type a country & hit Enter" autocomplete="off" />
+        <div id="score">Score: 0</div>
     </div>
     <div id="map"></div>
 </div>
@@ -99,7 +120,7 @@ const countries = [
 {"name":"Montenegro","latlng":[42.5,19.3]},{"name":"Morocco","latlng":[32,-5]},{"name":"Mozambique","latlng":[-18.25,35]},
 {"name":"Myanmar","latlng":[22,98]},{"name":"Namibia","latlng":[-22,17]},{"name":"Nauru","latlng":[-0.53,166.92]},
 {"name":"Nepal","latlng":[28,84]},{"name":"Netherlands","latlng":[52.5,5.75]},{"name":"New Zealand","latlng":[-42,174]},
-{"name":"Nicaragua","latlng":[13,-85]},{"name":"Niger",[14,8]},{"name":"Nigeria","latlng":[10,8]},
+{"name":"Nicaragua","latlng":[13,-85]},{"name":"Niger","latlng":[14,8]},{"name":"Nigeria","latlng":[10,8]},
 {"name":"North Korea","latlng":[40,127]},{"name":"North Macedonia","latlng":[41.83,22]},{"name":"Norway","latlng":[62,10]},
 {"name":"Oman","latlng":[21,57]},{"name":"Pakistan","latlng":[30,70]},{"name":"Palau","latlng":[7.5,134.5]},
 {"name":"Panama","latlng":[9,-80]},{"name":"Papua New Guinea","latlng":[-6,147]},{"name":"Paraguay","latlng":[-23,-58]},
@@ -120,22 +141,46 @@ const countries = [
 {"name":"Trinidad and Tobago","latlng":[11,-61]},{"name":"Tunisia","latlng":[34,9]},{"name":"Turkey","latlng":[39,35]},
 {"name":"Turkmenistan","latlng":[40,60]},{"name":"Tuvalu","latlng":[-8,178]},{"name":"Uganda","latlng":[1,32]},
 {"name":"Ukraine","latlng":[49,32]},{"name":"United Arab Emirates","latlng":[24,54]},{"name":"United Kingdom","latlng":[54,-2]},
-{"name":"United States","latlng":[38,-97]},{"name":"Uruguay",[-33,-56]},{"name":"Uzbekistan","latlng":[41,64]},
+{"name":"United States","latlng":[38,-97]},{"name":"Uruguay","latlng":[-33,-56]},{"name":"Uzbekistan","latlng":[41,64]},
 {"name":"Vanuatu","latlng":[-16,167]},{"name":"Vatican City","latlng":[41.9,12.45]},{"name":"Venezuela","latlng":[8,-66]},
 {"name":"Vietnam","latlng":[16,108]},{"name":"Yemen","latlng":[15,48]},{"name":"Zambia","latlng":[-15,30]},
 {"name":"Zimbabwe","latlng":[-20,30]}
 ];
 
 /* ---------- 2. Map setup ---------- */
-const map = L.map('map', {
-    center: [20, 0],
-    zoom: 2,
-    zoomSnap: 0.5,
-    zoomDelta: 0.5
-});
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-}).addTo(map);
+// const map = L.map('map', {
+//     center: [20, 0],
+//     zoom: 3,
+//     zoomSnap: 0.5,
+//     zoomDelta: 0.5
+// });
+// L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//     attribution: '© OpenStreetMap contributors'
+// }).addTo(map);
+
+
+    // 1. Blank basemap (no features or labels)
+    const blankTile = L.tileLayer('', { attribution: '' });
+
+    // 2. Init map
+    const map = L.map('map', {
+      center: [20, 0],
+      zoom: 3,
+      layers: [blankTile]
+    });
+
+    // 3. Load and draw country outlines
+    fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
+      .then(res => res.json())
+      .then(data => {
+        L.geoJSON(data, {
+          style: {
+            color: '#333',
+            weight: 1,
+            fill: false
+          }
+        }).addTo(map);
+      });
 
 /* ---------- 3. Markers & Fuse index ---------- */
 const markers = {};            // key = country name, value = L.marker
@@ -154,9 +199,17 @@ countries.forEach(c => {
 
 const fuse = new Fuse(countries, {
     keys: ['name'],
-    threshold: 0.35,
+    threshold: 0.25,
+    distance: 15,
+    minMatchCharLength: 3,
     includeScore: true
 });
+
+// const fuse = new Fuse(countries, {
+//     keys: ['name'],
+//     threshold: 0.65,
+//     includeScore: true
+// });
 
 /* ---------- 4. Game logic ---------- */
 const inputEl = document.getElementById('countryInput');
@@ -168,7 +221,7 @@ inputEl.addEventListener('keydown', e => {
     const query = inputEl.value.trim();
     if (!query) return;
     const result = fuse.search(query);
-    if (result.length && result[0].score < 0.35) {
+    if (result.length && result[0].score < 0.25) {
         const name = result[0].item.name;
         if (guessed.has(name)) {
             inputEl.value = '';
@@ -179,7 +232,10 @@ inputEl.addEventListener('keydown', e => {
         scoreEl.textContent = `Score: ${score}`;
         animateWordToMarker(name);
         flashMarker(name);
+
+
     }
+
     inputEl.value = '';
 });
 
@@ -195,9 +251,9 @@ function animateWordToMarker(name) {
     const marker = markers[name];
     const pt = map.latLngToContainerPoint(marker.getLatLng());
     setTimeout(() => {
-        word.style.transform = `translate(${pt.x - rect.left}px, ${pt.y - rect.top}px) scale(0.5)`;
+        word.style.transform = `translate(${pt.x - rect.left}px, ${pt.y - rect.bottom + 100}px) scale(0.5)`;
         word.style.opacity = 0;
-    }, 10);
+    }, 100);
     setTimeout(() => word.remove(), 1100);
 }
 
@@ -205,9 +261,17 @@ function flashMarker(name) {
     const icon = markers[name]._path || markers[name]._icon;
     if (icon) {
         icon.classList.add('flash');
+        icon.classList.add('found');
+        markers[name].setStyle({
+            color: 'red',
+            fillColor: 'yellow',
+            radius: 5
+        });
+
         setTimeout(() => icon.classList.remove('flash'), 1800);
     }
 }
 </script>
 </body>
 </html>
+
