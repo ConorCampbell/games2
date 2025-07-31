@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Night City Racer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f0f 100%);
+            font-family: 'Orbitron', monospace;
+            touch-action: none;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: linear-gradient(to bottom, #000428 0%, #004e92 100%);
+        }
+        
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #00ffff;
+            font-size: 16px;
+            z-index: 10;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
+            background: rgba(0, 20, 40, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(5px);
+            animation: pulse-glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse-glow {
+            from { box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+            to { box-shadow: 0 0 20px rgba(0, 255, 255, 0.8), 0 0 30px rgba(0, 255, 255, 0.4); }
+        }
+        
+        #mobileControls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: none;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 10;
+        }
+        
+        .controlBtn {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(0, 100, 255, 0.2));
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 20px;
+            user-select: none;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), inset 0 0 20px rgba(0, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        .controlBtn:active {
+            background: linear-gradient(135deg, rgba(0, 255, 255, 0.4), rgba(0, 100, 255, 0.4));
+            transform: scale(0.95);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8), inset 0 0 30px rgba(0, 255, 255, 0.2);
+        }
+        
+        #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, rgba(0, 20, 40, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%);
+            color: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        #gameOverScreen h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff, 0 0 60px #00ffff;
+            animation: flicker 1.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        #gameOverScreen button {
+            padding: 20px 40px;
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            color: #000;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            font-family: 'Orbitron', monospace;
+        }
+        
+        #gameOverScreen button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+        }
+        
+        .checkpoint {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, rgba(255, 165, 0, 0.6) 50%, rgba(255, 69, 0, 0.4) 100%);
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700, inset 0 0 20px rgba(255, 255, 255, 0.3);
+            z-index: 5;
+            animation: checkpoint-pulse 2s ease-in-out infinite;
+            transform: translate(-50%, -50%);
+        }
+        
+        @keyframes checkpoint-pulse {
+            0%, 100% { 
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 0 30px #ffd700, 0 0 60px #ffd700, inset 0 0 20px rgba(255, 255, 255, 0.3);
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.2);
+                box-shadow: 0 0 40px #ffd700, 0 0 80px #ffd700, inset 0 0 30px rgba(255, 255, 255, 0.5);
+            }
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00ffff;
+            pointer-events: none;
+            animation: particle-float 3s linear infinite;
+        }
+        
+        @keyframes particle-float {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(0);
+            }
+        }
+        
+        #minimap {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 20, 40, 0.8);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 10px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        <div id="hud">
+            <div>Race: <span id="raceNum">1</span></div>
+            <div>Checkpoint: <span id="checkpointNum">0</span>/10</div>
+            <div>Time: <span id="timeDisplay">0:00</span></div>
+        </div>
+        <canvas id="minimap" width="200" height="200"></canvas>
+        <div id="mobileControls">
+            <div class="controlBtn" id="leftBtn">←</div>
+            <div class="controlBtn" id="rightBtn">→</div>
+            <div class="controlBtn" id="upBtn">↑</div>
+            <div class="controlBtn" id="downBtn">↓</div>
+        </div>
+        <div id="gameOverScreen">
+            <h1>Race Complete!</h1>
+            <p>Time: <span id="finalTime">0:00</span></p>
+            <button id="nextRaceBtn">Next Race</button>
+        </div>
+    </div>
+
+    <script>
+        // Game setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const minimap = document.getElementById('minimap');
+        const minimapCtx = minimap.getContext('2d');
+        let gameWidth, gameHeight;
+        
+        // Resize canvas to fill window
+        function resizeCanvas() {
+            gameWidth = window.innerWidth;
+            gameHeight = window.innerHeight;
+            canvas.width = gameWidth;
+            canvas.height = gameHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Mobile detection
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            document.getElementById('mobileControls').style.display = 'flex';
+        }
+        
+        // Game state
+        let gameState = {
+            race: 1,
+            checkpoint: 0,
+            startTime: Date.now(),
+            gameOver: false
+        };
+        
+        // Car properties
+        const car = {
+            x: gameWidth / 2,
+            y: gameHeight / 2,
+            width: 40,
+            height: 70,
+            speed: 0,
+            maxSpeed: 5 + (gameState.race - 1) * 0.5,
+            acceleration: 0.2 + (gameState.race - 1) * 0.05,
+            deceleration: 0.1,
+            turnSpeed: 0.03 + (gameState.race - 1) * 0.005,
+            angle: 0,
+            rotation: 0
+        };
+        
+        // Controls
+        const keys = {
+            ArrowUp: false,
+            ArrowDown: false,
+            ArrowLeft: false,
+            ArrowRight: false
+        };
+        
+        // Checkpoints
+        let checkpoints = [];
+        const checkpointRadius = 30;
+        
+        // Buildings for city landscape
+        let buildings = [];
+        
+        // Particles
+        let particles = [];
+        
+        // Initialize game
+        function initGame() {
+            // Reset car position
+            car.x = gameWidth / 2;
+            car.y = gameHeight / 2;
+            car.speed = 0;
+            car.angle = 0;
+            car.maxSpeed = 5 + (gameState.race - 1) * 0.5;
+            car.acceleration = 0.2 + (gameState.race - 1) * 0.05;
+            car.turnSpeed = 0.03 + (gameState.race - 1) * 0.005;
+            
+            // Reset game state
+            gameState.checkpoint = 0;
+            gameState.startTime = Date.now();
+            gameState.gameOver = false;
+            
+            // Generate checkpoints
+            generateCheckpoints();
+            
+            // Generate buildings
+            generateBuildings();
+            
+            // Start game loop
+            if (!gameLoop) {
+                gameLoop = setInterval(update, 1000/60);
+            }
+            
+            // Update HUD
+            document.getElementById('raceNum').textContent = gameState.race;
+            document.getElementById('checkpointNum').textContent = gameState.checkpoint;
+            document.getElementById('gameOverScreen').style.display = 'none';
+        }
+        
+        function generateCheckpoints() {
+            checkpoints = [];
+            const margin = 100;
+            const difficulty = gameState.race;
+            
+            for (let i = 0; i < 10; i++) {
+                let x, y;
+                let attempts = 0;
+                let valid = false;
+                
+                while (!valid && attempts < 100) {
+                    x = margin + Math.random() * (gameWidth - 2 * margin);
+                    y = margin + Math.random() * (gameHeight - 2 * margin);
+                    
+                    // Make sure checkpoints aren't too close to each other
+                    valid = true;
+                    for (let j = 0; j < checkpoints.length; j++) {
+                        const dx = x - checkpoints[j].x;
+                        const dy = y - checkpoints[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < 200 / (difficulty * 0.5)) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    
+                    attempts++;
+                }
+                
+                checkpoints.push({ x, y, reached: false });
+            }
+        }
+        
+        function generateBuildings() {
+            buildings = [];
+            const buildingCount = 50 + gameState.race * 10;
+            
+            for (let i = 0; i < buildingCount; i++) {
+                const width = 30 + Math.random() * 100;
+                const height = 100 + Math.random() * 300;
+                const x = Math.random() * (gameWidth + 1000) - 500;
+                const y = Math.random() * (gameHeight + 1000) - 500;
+                
+                // Make sure buildings don't overlap with checkpoints
+                let valid = true;
+                for (let j = 0; j < checkpoints.length; j++) {
+                    const dx = x - checkpoints[j].x;
+                    const dy = y - checkpoints[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        valid = false;
+                        break;
+                    }
+                }
+                
+                if (valid) {
+                    buildings.push({
+                        x,
+                        y,
+                        width,
+                        height,
+                        color: `rgb(${20 + Math.random() * 20}, ${20 + Math.random() * 20}, ${30 + Math.random() * 40})`,
+                        windows: []
+                    });
+                    
+                    // Generate windows for each building
+                    const windowSize = 5;
+                    const windowSpacing = 10;
+                    for (let wx = 5; wx < width - 5; wx += windowSpacing) {
+                        for (let wy = 10; wy < height - 10; wy += windowSpacing) {
+                            if (Math.random() > 0.3) {
+                                buildings[buildings.length - 1].windows.push({
+                                    x: wx,
+                                    y: wy,
+                                    lit: Math.random() > 0.4
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        function drawCar() {
+            ctx.save();
+            ctx.translate(car.x, car.y);
+            ctx.rotate(car.angle);
+            
+            // Car body with gradient
+            const gradient = ctx.createLinearGradient(-car.width / 2, -car.height / 2, car.width / 2, car.height / 2);
+            gradient.addColorStop(0, '#ff0040');
+            gradient.addColorStop(0.5, '#ff4080');
+            gradient.addColorStop(1, '#ff0060');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(-car.width / 2, -car.height / 2, car.width, car.height);
+            
+            // Car top (cabin) with glass effect
+            ctx.fillStyle = 'rgba(0, 200, 255, 0.7)';
+            ctx.beginPath();
+            ctx.roundRect(-car.width / 3, -car.height / 3, car.width * 2/3, car.height / 3, 5);
+            ctx.fill();
+            
+            // Car windshield reflection
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.roundRect(-car.width / 3 + 2, -car.height / 3 + 2, car.width * 2/3 - 4, 5, 2);
+            ctx.fill();
+            
+            // Car headlights with glow
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(-car.width / 2 + 5, -car.height / 2 + 10, 5, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(car.width / 2 - 5, -car.height / 2 + 10, 5, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Headlight glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ffff00';
+            ctx.fillStyle = 'rgba(255, 255, 200, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(-car.width / 2 + 5, -car.height / 2 + 10, 8, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(car.width / 2 - 5, -car.height / 2 + 10, 8, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Car taillights with glow
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.ellipse(-car.width / 2 + 5, car.height / 2 - 10, 4, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(car.width / 2 - 5, car.height / 2 - 10, 4, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Taillight glow
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ff0000';
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(-car.width / 2 + 5, car.height / 2 - 10, 6, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(car.width / 2 - 5, car.height / 2 - 10, 6, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Racing stripes
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-car.width / 2 + 10, -car.height / 2);
+            ctx.lineTo(-car.width / 2 + 10, car.height / 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(car.width / 2 - 10, -car.height / 2);
+            ctx.lineTo(car.width / 2 - 10, car.height / 2);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function drawCheckpoints() {
+            for (let i = 0; i < checkpoints.length; i++) {
+                const checkpoint = checkpoints[i];
+                
+                // Skip already reached checkpoints
+                if (checkpoint.reached) continue;
+                
+                // Only draw the next checkpoint
+                if (i === gameState.checkpoint) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(Date.now() / 200);
+                    
+                    // Outer glow
+                    const glowGradient = ctx.createRadialGradient(
+                        checkpoint.x, checkpoint.y, 0,
+                        checkpoint.x, checkpoint.y, checkpointRadius * 2.5
+                    );
+                    glowGradient.addColorStop(0, 'rgba(255, 215, 0, 0.8)');
+                    glowGradient.addColorStop(0.5, 'rgba(255, 165, 0, 0.4)');
+                    glowGradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
+                    ctx.fillStyle = glowGradient;
+                    ctx.beginPath();
+                    ctx.arc(checkpoint.x, checkpoint.y, checkpointRadius * 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Checkpoint number
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 24px Orbitron';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(i + 1, checkpoint.x, checkpoint.y);
+                    ctx.fillText(i + 1, checkpoint.x, checkpoint.y);
+                    
+                    // Direction arrow
+                    const dx = checkpoint.x - car.x;
+                    const dy = checkpoint.y - car.y;
+                    const angle = Math.atan2(dy, dx);
+                    const arrowDistance = 150;
+                    
+                    ctx.save();
+                    ctx.translate(car.x + Math.cos(angle) * arrowDistance, car.y + Math.sin(angle) * arrowDistance);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.8)';
+                    ctx.beginPath();
+                    ctx.moveTo(0, -10);
+                    ctx.lineTo(20, 0);
+                    ctx.lineTo(0, 10);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                    
+                    ctx.restore();
+                }
+            }
+        }
+        
+        function drawBuildings() {
+            for (const building of buildings) {
+                // Only draw buildings near the viewport
+                if (building.x + building.width < car.x - gameWidth / 2 - 100 ||
+                    building.x > car.x + gameWidth / 2 + 100 ||
+                    building.y + building.height < car.y - gameHeight / 2 - 100 ||
+                    building.y > car.y + gameHeight / 2 + 100) {
+                    continue;
+                }
+                
+                ctx.fillStyle = building.color;
+                ctx.fillRect(
+                    building.x - car.x + gameWidth / 2,
+                    building.y - car.y + gameHeight / 2,
+                    building.width,
+                    building.height
+                );
+                
+                // Draw windows
+                for (const window of building.windows) {
+                    if (window.lit) {
+                        ctx.fillStyle = `rgba(255, 255, ${150 + Math.random() * 100}, ${0.7 + Math.random() * 0.3})`;
+                    } else {
+                        ctx.fillStyle = 'rgba(50, 50, 70, 0.8)';
+                    }
+                    
+                    ctx.fillRect(
+                        building.x - car.x + gameWidth / 2 + window.x,
+                        building.y - car.y + gameHeight / 2 + window.y,
+                        5, 5
+                    );
+                }
+            }
+        }
+        
+        function drawRoads() {
+            // Draw road grid
+            ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+            ctx.lineWidth = 2;
+            
+            // Vertical roads
+            for (let x = 0; x < gameWidth + 2000; x += 200) {
+                const offset = (x - car.x) % 200;
+                
+                ctx.beginPath();
+                ctx.moveTo(x - offset, 0);
+                ctx.lineTo(x - offset, gameHeight);
+                ctx.stroke();
+                
+                // Draw road markings
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([20, 20]);
+                ctx.beginPath();
+                ctx.moveTo(x - offset, 0);
+                ctx.lineTo(x - offset, gameHeight);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // Horizontal roads
+            for (let y = 0; y < gameHeight + 2000; y += 200) {
+                const offset = (y - car.y) % 200;
+                
+                ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, y - offset);
+                ctx.lineTo(gameWidth, y - offset);
+                ctx.stroke();
+                
+                // Draw road markings
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([20, 20]);
+                ctx.beginPath();
+                ctx.moveTo(0, y - offset);
+                ctx.lineTo(gameWidth, y - offset);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        function drawMinimap() {
+            minimapCtx.fillStyle = 'rgba(0, 20, 40, 0.8)';
+            minimapCtx.fillRect(0, 0, 200, 200);
+            
+            const scale = 0.1;
+            const offsetX = 100;
+            const offsetY = 100;
+            
+            // Draw car
+            minimapCtx.fillStyle = '#ff0040';
+            minimapCtx.beginPath();
+            minimapCtx.arc(
+                offsetX + car.x * scale,
+                offsetY + car.y * scale,
+                3, 0, Math.PI * 2
+            );
+            minimapCtx.fill();
+            
+            // Draw checkpoints
+            for (let i = 0; i < checkpoints.length; i++) {
+                const checkpoint = checkpoints[i];
+                minimapCtx.fillStyle = checkpoint.reached ? '#00ff00' : 
+                                     i === gameState.checkpoint ? '#ffd700' : '#666666';
+                minimapCtx.beginPath();
+                minimapCtx.arc(
+                    offsetX + checkpoint.x * scale,
+                    offsetY + checkpoint.y * scale,
+                    2, 0, Math.PI * 2
+                );
+                minimapCtx.fill();
+            }
+            
+            // Draw border
+            minimapCtx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+            minimapCtx.lineWidth = 2;
+            minimapCtx.strokeRect(0, 0, 200, 200);
+        }
+        
+        function checkCheckpointCollision() {
+            if (gameState.checkpoint >= checkpoints.length) return;
+            
+            const checkpoint = checkpoints[gameState.checkpoint];
+            const dx = car.x - checkpoint.x;
+            const dy = car.y - checkpoint.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < checkpointRadius) {
+                checkpoint.reached = true;
+                gameState.checkpoint++;
+                
+                // Create particles
+                for (let i = 0; i < 20; i++) {
+                    particles.push({
+                        x: checkpoint.x,
+                        y: checkpoint.y,
+                        vx: (Math.random() - 0.5) * 5,
+                        vy: (Math.random() - 0.5) * 5,
+                        life: 1
+                    });
+                }
+                
+                document.getElementById('checkpointNum').textContent = gameState.checkpoint;
+                
+                if (gameState.checkpoint >= 10) {
+                    gameState.gameOver = true;
+                    const finalTime = formatTime(Date.now() - gameState.startTime);
+                    document.getElementById('finalTime').textContent = finalTime;
+                    document.getElementById('gameOverScreen').style.display = 'flex';
+                }
+            }
+        }
+        
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.arc(p.x - car.x + gameWidth / 2, p.y - car.y + gameHeight / 2, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        function formatTime(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        }
+        
+        function updateHUD() {
+            document.getElementById('timeDisplay').textContent = formatTime(Date.now() - gameState.startTime);
+        }
+        
+        function update() {
+            if (gameState.gameOver) return;
+            
+            // Update car physics
+            if (keys.ArrowUp || keys.w) {
+                car.speed += car.acceleration;
+                if (car.speed > car.maxSpeed) car.speed = car.maxSpeed;
+            } else if (keys.ArrowDown || keys.s) {
+                car.speed -= car.acceleration * 1.5;
+                if (car.speed < -car.maxSpeed / 2) car.speed = -car.maxSpeed / 2;
+            } else {
+                // Deceleration
+                if (car.speed > 0) {
+                    car.speed -= car.deceleration;
+                    if (car.speed < 0) car.speed = 0;
+                } else if (car.speed < 0) {
+                    car.speed += car.deceleration;
+                    if (car.speed > 0) car.speed = 0;
+                }
+            }
+            
+            if (keys.ArrowLeft || keys.a) {
+                if (Math.abs(car.speed) > 0.1) {
+                    car.angle -= car.turnSpeed * (car.speed / car.maxSpeed);
+                }
+            }
+            if (keys.ArrowRight || keys.d) {
+                if (Math.abs(car.speed) > 0.1) {
+                    car.angle += car.turnSpeed * (car.speed / car.maxSpeed);
+                }
+            }
+            
+            // Update car position
+            car.x += Math.cos(car.angle) * car.speed;
+            car.y += Math.sin(car.angle) * car.speed;
+            
+            // Keep car within world bounds
+            car.x = Math.max(50, Math.min(car.x, gameWidth * 3 - 50));
+            car.y = Math.max(50, Math.min(car.y, gameHeight * 3 - 50));
+            
+            // Check collisions
+            checkCheckpointCollision();
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, gameWidth, gameHeight);
+            
+            // Draw night sky gradient
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, gameHeight);
+            skyGradient.addColorStop(0, '#000428');
+            skyGradient.addColorStop(0.5, '#004e92');
+            skyGradient.addColorStop(1, '#0a0a0a');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, gameWidth, gameHeight);
+            
+            // Draw stars
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 200; i++) {
+                const x = (i * 37.5) % gameWidth;
+                const y = (i * 73.2) % gameHeight;
+                const twinkle = Math.sin(Date.now() * 0.001 + i) * 0.5 + 0.5;
+                ctx.globalAlpha = twinkle * 0.8;
+                ctx.fillRect(x, y, 1, 1);
+            }
+            ctx.globalAlpha = 1;
+            
+            // Draw roads
+            drawRoads();
+            
+            // Draw city
+            drawBuildings();
+            
+            // Draw checkpoints
+            drawCheckpoints();
+            
+            // Update and draw particles
+            updateParticles();
+            
+            // Draw car
+            drawCar();
+            
+            // Draw minimap
+            drawMinimap();
+            
+            // Update HUD
+            updateHUD();
+        }
+        
+        // Event listeners
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.code)) {
+                keys[e.code] = true;
+                e.preventDefault();
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.code)) {
+                keys[e.code] = false;
+                e.preventDefault();
+            }
+        });
+        
+        // Alternative key mappings
+        const keys = {
+            ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
+            w: false, s: false, a: false, d: false
+        };
+        
+        window.addEventListener('keydown', (e) => {
+            if (keys.hasOwnProperty(e.key.toLowerCase())) {
+                keys[e.key.toLowerCase()] = true;
+                e.preventDefault();
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            if (keys.hasOwnProperty(e.key.toLowerCase())) {
+                keys[e.key.toLowerCase()] = false;
+                e.preventDefault();
+            }
+        });
+        
+        // Mobile controls
+        if (isMobile) {
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const upBtn = document.getElementById('upBtn');
+            const downBtn = document.getElementById('downBtn');
+            
+            leftBtn.addEventListener('touchstart', () => keys.ArrowLeft = true);
+            leftBtn.addEventListener('touchend', () => keys.ArrowLeft = false);
+            
+            rightBtn.addEventListener('touchstart', () => keys.ArrowRight = true);
+            rightBtn.addEventListener('touchend', () => keys.ArrowRight = false);
+            
+            upBtn.addEventListener('touchstart', () => keys.ArrowUp = true);
+            upBtn.addEventListener('touchend', () => keys.ArrowUp = false);
+            
+            downBtn.addEventListener('touchstart', () => keys.ArrowDown = true);
+            downBtn.addEventListener('touchend', () => keys.ArrowDown = false);
+        }
+        
+        // Next race button
+        document.getElementById('nextRaceBtn').addEventListener('click', () => {
+            gameState.race++;
+            initGame();
+        });
+        
+        // Start game
+        let gameLoop;
+        initGame();
+    </script>
+</body>
+</html>
