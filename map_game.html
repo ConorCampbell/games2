@@ -61,6 +61,9 @@
     /* marker flash */
     .flash{
         animation:flash 0.6s 5;
+        font-size:4em;
+        color:red;
+     background-colr:red   
     }
     .found{
         color:red;
@@ -5213,6 +5216,7 @@ function flashMarker(name) {
     if (icon) {
         icon.classList.add('flash');
         icon.classList.add('found');
+        
         markers[name].setStyle({
             color: 'red',
             fillColor: 'yellow',
