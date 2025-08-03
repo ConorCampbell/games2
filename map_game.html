@@ -5056,7 +5056,7 @@ regionsEl.addEventListener('click', e => {
             if (markerGroup){
                 map.removeLayer(markerGroup);
                 if (reg === region){
-                    markerGroups[region] = L.layerGroup().addTo(map);
+                    markerGroup.addTo(map);
                 }
             }
         });
