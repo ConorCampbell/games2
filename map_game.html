@@ -5017,6 +5017,16 @@ countries.forEach(c => {
 console.log('Region counts:', regionCounts);
 
     
+    // 1. Blank basemap (no features or labels)
+    const blankTile = L.tileLayer('', { attribution: '' });
+
+    // 2. Init map
+    const map = L.map('map', {
+      center: [20, 0],
+      zoom: 3,
+      layers: [blankTile]
+    });
+    
 //now we take the regions and add them to the element with id 'regions'
 const regionsEl = document.getElementById('regions');
 
@@ -5078,15 +5088,6 @@ regionsEl.addEventListener('click', e => {
 // }).addTo(map);
 
 
-    // 1. Blank basemap (no features or labels)
-    const blankTile = L.tileLayer('', { attribution: '' });
-
-    // 2. Init map
-    const map = L.map('map', {
-      center: [20, 0],
-      zoom: 3,
-      layers: [blankTile]
-    });
 
     // 3. Load and draw country outlines
     fetch('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json')
