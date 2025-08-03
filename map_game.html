@@ -5092,7 +5092,7 @@ regionsEl.addEventListener('click', e => {
                 if ((reg === region || region === 'All')){
                     markerGroup.addTo(map);
                     if (reg != 'All'){
-                        map.fitBounds(markerGroup.getBounds());
+                        map.fitBounds(markerGroup.getBounds(), { padding: [20, 20] });
     }else{
                             map.fitBounds(allBounds, { padding: [20, 20] });  // Optional padding
 
