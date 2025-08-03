@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <style>
+    /* General styles */
     html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:#f5f5f5}
     #app{display:flex;flex-direction:column;height:100%}
     #header{
@@ -4991,6 +4992,7 @@ const countries = [
     }
 ];
 
+
 // for each region we will add a color code that we later use to color the markers
 const regionColors = {
     'Africa': '#ffcc00',
@@ -5013,6 +5015,17 @@ console.log('Region counts:', regionCounts);
 //now we take the regions and add them to the element with id 'regions'
 const regionsEl = document.getElementById('regions');
 
+// attach a click handler to the regions element
+regionsEl.addEventListener('click', e => {
+    if (e.target.classList.contains('region')) {
+        const region = e.target.textContent.split(':')[0];
+        console.log('Region clicked:', region);
+        // filter the countries by region and log them
+        const filteredCountries = countries.filter(c => c.region === region);
+        console.log('Countries in region:', filteredCountries.map(c => c.name));
+    }
+});
+
 Object.entries(regionCounts).forEach(([region, count]) => {
     const el = document.createElement('span');
     el.className = 'region';
@@ -5020,8 +5033,6 @@ Object.entries(regionCounts).forEach(([region, count]) => {
     el.textContent = `${region}: ${count}`;
     regionsEl.appendChild(el);  
 });
-
-
 
 
 /* ---------- 2. Map setup ---------- */
