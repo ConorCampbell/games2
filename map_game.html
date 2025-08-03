@@ -5022,9 +5022,21 @@ regionsEl.addEventListener('click', e => {
         console.log('Region clicked:', region);
         // filter the countries by region and log them
         const filteredCountries = countries.filter(c => c.region === region);
+
         console.log('Countries in region:', filteredCountries.map(c => c.name));
-    }
-});
+        // highlight the markers for the countries in this region
+        filteredCountries.forEach(c => {
+            const marker = markers[c.name];
+            if (marker) {
+                marker.setStyle({
+                    color: regionColors[c.region] || '#ccc', // fallback color
+                    fillColor: regionColors[c.region] || '#ccc',
+                    radius: 5
+                });
+                flashMarker(c.name); // flash the marker        
+            }
+        })
+}});
 
 Object.entries(regionCounts).forEach(([region, count]) => {
     const el = document.createElement('span');
