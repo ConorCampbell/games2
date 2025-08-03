@@ -5037,8 +5037,9 @@ Object.entries(regionCounts).forEach(([region, count]) => {
     el.className = 'region';
     el.style.backgroundColor = regionColors[region] || '#ccc'; // fallback color
     el.textContent = `${region}: ${count}`;
-    regionsEl.appendChild(el);  
-    markerGroups[region] = L.layerGroup().addTo(map);
+    regionsEl.appendChild(el);
+    
+    markerGroups[region] = L.featureGroup().addTo(map);
 });
 
 // attach a click handler to the regions element
