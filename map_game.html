@@ -5043,11 +5043,10 @@ regionsEl.addEventListener('click', e => {
                 marker.setStyle({
                      display:'block'
                 });
-                flashMarker(c.name); // flash the marker        
+                // flashMarker(c.name); // flash the marker        
             }
         })
 
-        
 }});
 
 Object.entries(regionCounts).forEach(([region, count]) => {
@@ -5099,6 +5098,11 @@ const markers = {};            // key = country name, value = L.marker
 const guessed = new Set();     // already-guessed countries
 
 // use region colors to color the markers
+function place_markers(){
+// remove old markers
+for (const key in markers) {
+    map.removeLayer(markers[key]);
+}
 
 countries.forEach(c => {
     const m = L.circleMarker(c.latlng, {
@@ -5121,7 +5125,11 @@ countries.forEach(c => {
     
     markers[c.name] = m;
 });
+};
 
+    place_markers()
+    
+    
 const fuse = new Fuse(countries, {
     keys: ['name'],
     threshold: 0.25,
