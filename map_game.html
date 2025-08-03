@@ -5055,6 +5055,13 @@ Object.entries(regionCounts).forEach(([region, count]) => {
         markerGroups[region].addTo(map);
     
 });
+    
+// Add All regions button
+const el = document.createElement('span');
+el.className = 'region';
+el.style.backgroundColor = '#ccc'; // fallback color
+el.textContent = `All: 0`;
+regionsEl.appendChild(el);
 
 // attach a click handler to the regions element
 regionsEl.addEventListener('click', e => {
@@ -5070,7 +5077,7 @@ regionsEl.addEventListener('click', e => {
             markerGroup = markerGroups[reg] 
             if (markerGroup){
                 map.removeLayer(markerGroup);
-                if (reg === region){
+                if (reg === region | reg==='All'){
                     markerGroup.addTo(map);
                     map.fitBounds(markerGroup.getBounds());
                 }
