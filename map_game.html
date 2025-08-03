@@ -17,7 +17,8 @@
     html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;background:#f5f5f5}
     #app{display:flex;flex-direction:column;height:100%}
     #header{
-        background:#007bff;color:#fff;padding:12px 8px;text-align:center;position:relative;
+        background:lightslategrey;
+        color:#fff;padding:12px 8px;text-align:center;position:relative;
         z-index:1000;
         display:flex;
         flex-direction:row;
@@ -5042,7 +5043,15 @@ console.log('Region counts:', regionCounts);
 const regionsEl = document.getElementById('regions');
 
 const markerGroups = {}
-    
+
+// Add All regions button
+const el = document.createElement('span');
+el.className = 'region';
+el.style.backgroundColor = '#ccc'; // fallback color
+el.textContent = `All: 0`;
+regionsEl.appendChild(el);
+
+// build the region layer groups
 Object.entries(regionCounts).forEach(([region, count]) => {
     const el = document.createElement('span');
     el.className = 'region';
@@ -5050,18 +5059,21 @@ Object.entries(regionCounts).forEach(([region, count]) => {
     el.textContent = `${region}: ${count}`;
     regionsEl.appendChild(el);
     
-    markerGroups[region] = L.featureGroup()
-        
-        markerGroups[region].addTo(map);
+    markerGroups[region] = L.featureGroup()    
+    markerGroups[region].addTo(map);
     
 });
-    
-// Add All regions button
-const el = document.createElement('span');
-el.className = 'region';
-el.style.backgroundColor = '#ccc'; // fallback color
-el.textContent = `All: 0`;
-regionsEl.appendChild(el);
+
+    let allBounds = L.latLngBounds();
+
+map.eachLayer(layer => {
+    // Only consider layers that have a getBounds or getLatLng method
+    if (layer instanceof L.Marker && layer.getLatLng) {
+        allBounds.extend(layer.getLatLng());
+    } else if (layer.getBounds) {
+        allBounds.extend(layer.getBounds());
+    }
+});
 
 // attach a click handler to the regions element
 regionsEl.addEventListener('click', e => {
@@ -5079,7 +5091,12 @@ regionsEl.addEventListener('click', e => {
                 map.removeLayer(markerGroup);
                 if ((reg === region || region === 'All')){
                     markerGroup.addTo(map);
-                    map.fitBounds(markerGroup.getBounds());
+                    if (reg != 'All'){
+                        map.fitBounds(markerGroup.getBounds());
+    }else{
+                            map.fitBounds(allBounds, { padding: [20, 20] });  // Optional padding
+
+                    }
                 }
             }else{
                 console.log("region not found", reg)
