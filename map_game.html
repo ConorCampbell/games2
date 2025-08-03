@@ -5151,7 +5151,7 @@ const fuse = new Fuse(countries, {
     minMatchCharLength: 3,
     includeScore: true
 });
-`
+
 // const fuse = new Fuse(countries, {
 //     keys: ['name'],
 //     threshold: 0.65,
@@ -5163,6 +5163,8 @@ const inputEl = document.getElementById('countryInput');
 const scoreEl = document.getElementById('score');
 let score = 0;
 
+inputEl.focus()
+    
 inputEl.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
     const query = inputEl.value.trim();
