@@ -5077,7 +5077,7 @@ regionsEl.addEventListener('click', e => {
             markerGroup = markerGroups[reg] 
             if (markerGroup){
                 map.removeLayer(markerGroup);
-                if (reg === region | reg==='All'){
+                if (reg === region || reg === 'All'){
                     markerGroup.addTo(map);
                     map.fitBounds(markerGroup.getBounds());
                 }
