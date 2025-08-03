@@ -5132,9 +5132,11 @@ countries.forEach(c => {
     //     className: 'country-tooltip',
     //     opacity: 0.8
     // });
-
-    markerGroups[c.region].addLayer(m)
-    markers[c.name] = m;
+     mGroup = markerGroups[c.region] 
+    if (mGroup){
+        mGroup.addLayer(m)
+    }
+        markers[c.name] = m;
 });
 };
 
