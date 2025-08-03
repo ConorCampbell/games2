@@ -5039,7 +5039,10 @@ Object.entries(regionCounts).forEach(([region, count]) => {
     el.textContent = `${region}: ${count}`;
     regionsEl.appendChild(el);
     
-    markerGroups[region] = L.featureGroup().addTo(map);
+    markerGroups[region] = L.featureGroup()
+        
+        markerGroups[region].addTo(map);
+    
 });
 
 // attach a click handler to the regions element
