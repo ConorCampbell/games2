@@ -5007,6 +5007,9 @@ const regionColors = {
     'Atlantic': '#808080',
 };
 
+    
+
+    
 const regionCounts = {};
 countries.forEach(c => {
     if (c.region) {
@@ -5014,6 +5017,17 @@ countries.forEach(c => {
     }
 });
 console.log('Region counts:', regionCounts);
+    
+const markerGroups = {}
+    
+Object.entries(regionCounts).forEach(([region, count]) => {
+    const el = document.createElement('span');
+    el.className = 'region';
+    el.style.backgroundColor = regionColors[region] || '#ccc'; // fallback color
+    el.textContent = `${region}: ${count}`;
+    regionsEl.appendChild(el);  
+    markerGroups[region] = L.layerGroup().addTo(map);
+});
 
 //now we take the regions and add them to the element with id 'regions'
 const regionsEl = document.getElementById('regions');
@@ -5051,14 +5065,6 @@ regionsEl.addEventListener('click', e => {
         })
 
 }});
-
-Object.entries(regionCounts).forEach(([region, count]) => {
-    const el = document.createElement('span');
-    el.className = 'region';
-    el.style.backgroundColor = regionColors[region] || '#ccc'; // fallback color
-    el.textContent = `${region}: ${count}`;
-    regionsEl.appendChild(el);  
-});
 
 
 /* ---------- 2. Map setup ---------- */
@@ -5114,7 +5120,8 @@ countries.forEach(c => {
         fillColor: regionColors[c.region],
         fillOpacity: 0.8,
         weight: 1
-    }).addTo(map);
+    });
+
     m.countryName = c.name;
     m.capital = c.capital || '';
     m.region = c.region || '';
@@ -5125,12 +5132,13 @@ countries.forEach(c => {
     //     className: 'country-tooltip',
     //     opacity: 0.8
     // });
-    
+
+    markerGroups[c.region].addLayer(m)
     markers[c.name] = m;
 });
 };
 
-    place_markers()
+place_markers()
     
     
 const fuse = new Fuse(countries, {
