@@ -5007,9 +5007,7 @@ const regionColors = {
     'Atlantic': '#808080',
 };
 
-    
-
-    
+// count the countries per region    
 const regionCounts = {};
 countries.forEach(c => {
     if (c.region) {
@@ -5017,7 +5015,11 @@ countries.forEach(c => {
     }
 });
 console.log('Region counts:', regionCounts);
+
     
+//now we take the regions and add them to the element with id 'regions'
+const regionsEl = document.getElementById('regions');
+
 const markerGroups = {}
     
 Object.entries(regionCounts).forEach(([region, count]) => {
@@ -5028,9 +5030,6 @@ Object.entries(regionCounts).forEach(([region, count]) => {
     regionsEl.appendChild(el);  
     markerGroups[region] = L.layerGroup().addTo(map);
 });
-
-//now we take the regions and add them to the element with id 'regions'
-const regionsEl = document.getElementById('regions');
 
 // attach a click handler to the regions element
 regionsEl.addEventListener('click', e => {
