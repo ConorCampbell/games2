@@ -4995,17 +4995,26 @@ const countries = [
     }
 ];
 
+const regionColors = {
+    'Africa': '#8B4513',    // SaddleBrown – earthy, dark, high contrast
+    'America': '#1E90FF',   // DodgerBlue – strong, clear blue
+    'Asia': '#2E8B57',      // SeaGreen – natural, good on any background
+    'Europe': '#800080',    // Purple – dark and distinct
+    'Pacific': '#DA70D6',   // Orchid – vibrant, not too light
+    'Indian': '#FF1493',    // DeepPink – strong pink, far from others
+    'Atlantic': '#000000',  // Black – safe for ocean if labels are elsewhere
+};
 
 // for each region we will add a color code that we later use to color the markers
-const regionColors = {
-    'Africa': '#ffcc00',
-    'America': '#ff6600',
-    'Asia': '#00ccff',
-    'Europe': '#66ff66',
-    'Pacific': '#ff66ff',
-    'Indian': '#ff9900',
-    'Atlantic': '#808080',
-};
+// const regionColors = {
+//     'Africa': '#ffcc00',
+//     'America': '#ff6600',
+//     'Asia': '#00ccff',
+//     'Europe': '#66ff66',
+//     'Pacific': '#ff66ff',
+//     'Indian': '#ff9900',
+//     'Atlantic': '#808080',
+// };
 
 // count the countries per region    
 const regionCounts = {};
