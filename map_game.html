@@ -2034,7 +2034,7 @@ function place_markers(){
         }
         markers[c.name] = m;
 
-        if (parsedGuessed.includes(c.name)) {            
+        if (parsedGuessed && parsedGuessed.includes(c.name)) {            
             m.options.color = regionColors[c.region]; // highlight guessed countries
             m.options.border = 28; // make guessed countries larger
             m.options.fillColor = 'yellow';            
