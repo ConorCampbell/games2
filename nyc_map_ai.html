@@ -59,13 +59,27 @@
 </head>
 <body class="bg-slate-100">
 
-<div id="app" class="flex h-screen w-screen">
+<div id="app" class="relative h-screen w-screen overflow-hidden">
+
+    <!-- Mobile Menu Button -->
+    <button id="menu-toggle-btn" class="sm:hidden fixed top-4 left-4 z-30 bg-white p-2 rounded-md shadow-lg">
+        <svg class="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+    
+    <!-- Overlay for mobile menu -->
+    <div id="menu-overlay" class="sm:hidden fixed inset-0 bg-black bg-opacity-50 z-30 hidden"></div>
 
     <!-- Sidebar for Controls and Information -->
-    <aside class="w-full sm:w-96 bg-white shadow-lg flex flex-col z-20 h-full">
-        <div class="p-4 border-b border-slate-200">
-            <h1 class="text-2xl font-bold text-slate-800">Map Markers</h1>
-            <p class="text-sm text-slate-500">Pin locations or find businesses with AI.</p>
+    <aside id="sidebar" class="bg-white shadow-lg flex flex-col z-40 h-full w-full max-w-sm transform -translate-x-full transition-transform duration-300 ease-in-out 
+                           sm:w-96 sm:max-w-none sm:relative sm:translate-x-0 sm:shadow-none sm:z-20 fixed sm:flex">
+        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Map Markers</h1>
+                <p class="text-sm text-slate-500">Pin locations or find businesses.</p>
+            </div>
+            <button id="menu-close-btn" class="sm:hidden p-1 text-slate-500 hover:text-slate-800">
+                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
 
         <!-- AI Search Section -->
@@ -103,11 +117,15 @@
             </ul>
         </div>
     </aside>
-
-    <!-- Map Container -->
-    <main class="flex-grow h-full">
-        <div id="map"></div>
-    </main>
+    
+    <div class="flex flex-1 h-full">
+        <!-- This empty div is a spacer for the desktop sidebar -->
+        <div class="hidden sm:block sm:w-96 flex-shrink-0"></div>
+        <!-- Map Container -->
+        <main class="flex-grow h-full">
+            <div id="map"></div>
+        </main>
+    </div>
 
 </div>
 
@@ -117,45 +135,26 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     // --- CONFIGURATION --- //
-
-    // Defines the different types of markers a user can place.
-    // This makes it easy to add or modify marker types in the future.
     const MARKER_TYPES = {
-        HOME: {
-            label: 'Home',
-            color: 'blue',
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png'
-        },
-        WORK: {
-            label: 'Work',
-            color: 'orange',
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png'
-        },
-        FAVORITE: {
-            label: 'Favorite',
-            color: 'red',
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'
-        },
-        FOOD: {
-            label: 'Food',
-            color: 'green',
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png'
-        },
-        BUSINESS: { // Special type for AI search results
-            label: 'Business',
-            color: 'violet',
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png'
-        }
+        HOME: { label: 'Home', iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png' },
+        WORK: { label: 'Work', iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png' },
+        FAVORITE: { label: 'Favorite', iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png' },
+        FOOD: { label: 'Food', iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png' },
+        BUSINESS: { label: 'Business', iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png' }
     };
 
     // --- STATE MANAGEMENT --- //
     let map;
-    let leafletMarkers = {}; // Stores Leaflet marker objects, keyed by marker ID
-    let savedMarkers = []; // Array of marker data objects from localStorage
-    let selectedMarkerType = null; // The currently selected marker type for placing on the map
+    let leafletMarkers = {};
+    let savedMarkers = [];
+    let selectedMarkerType = null;
     let mapCenter = [40.7128, -74.0060]; // Default to NYC
 
     // --- UI ELEMENTS --- //
+    const sidebar = document.getElementById('sidebar');
+    const menuToggleBtn = document.getElementById('menu-toggle-btn');
+    const menuCloseBtn = document.getElementById('menu-close-btn');
+    const menuOverlay = document.getElementById('menu-overlay');
     const markerTypeSelector = document.getElementById('marker-type-selector');
     const savedMarkersList = document.getElementById('saved-markers-list');
     const clearMarkersBtn = document.getElementById('clear-markers-btn');
@@ -166,17 +165,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // --- INITIALIZATION --- //
 
-    /**
-     * Initializes the Leaflet map, sets up the tile layer, and centers it.
-     */
     function initMap() {
-        map = L.map('map').setView(mapCenter, 13);
+        map = L.map('map', {
+            zoomControl: false // We will add it in a different position
+        }).setView(mapCenter, 13);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
 
-        // Try to get user's location
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
                 const userLatLng = [position.coords.latitude, position.coords.longitude];
@@ -185,21 +184,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 L.marker(userLatLng, { icon: createIcon('grey') })
                  .addTo(map)
                  .bindPopup("<b>You are here</b>").openPopup();
-            }, () => {
-                console.warn("Geolocation access denied. Defaulting to NYC.");
-            });
+            }, () => console.warn("Geolocation access denied."));
         }
         
         map.on('click', onMapClick);
     }
     
-    /**
-     * Populates the sidebar with buttons for each marker type.
-     */
     function populateMarkerSelectors() {
-        markerTypeSelector.innerHTML = ''; // Clear existing
+        markerTypeSelector.innerHTML = '';
         Object.keys(MARKER_TYPES).forEach(key => {
-            if (key === 'BUSINESS') return; // Don't show business as a manual option
+            if (key === 'BUSINESS') return;
             const type = MARKER_TYPES[key];
             const button = document.createElement('button');
             button.className = `w-full border border-slate-300 text-slate-600 rounded-md p-2 text-sm font-medium hover:bg-slate-100 transition focus:ring-2 focus:ring-offset-1 focus:ring-blue-500`;
@@ -207,21 +201,31 @@ document.addEventListener("DOMContentLoaded", function () {
             button.textContent = type.label;
             button.onclick = () => {
                 selectedMarkerType = key;
-                // Visually indicate selection
                 document.querySelectorAll('#marker-type-selector button').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
                 button.classList.add('bg-blue-600', 'text-white');
+                // Close sidebar on mobile after selection
+                if (window.innerWidth < 640) {
+                    toggleSidebar(false);
+                }
             };
             markerTypeSelector.appendChild(button);
         });
     }
 
+    // --- RESPONSIVE SIDEBAR LOGIC --- //
+    
+    function toggleSidebar(show) {
+        if (show) {
+            sidebar.classList.remove('-translate-x-full');
+            menuOverlay.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            menuOverlay.classList.add('hidden');
+        }
+    }
+
     // --- MARKER & DATA HANDLING --- //
 
-    /**
-     * Creates a Leaflet icon object for a given marker type.
-     * @param {string} typeKey - The key of the marker type (e.g., 'HOME').
-     * @returns {L.Icon} A Leaflet icon instance.
-     */
     function createIcon(typeKey) {
         const type = MARKER_TYPES[typeKey] || { iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png' };
         return L.icon({
@@ -234,9 +238,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /**
-     * Loads markers from localStorage and displays them on the map.
-     */
     function loadMarkersFromStorage() {
         const markersJSON = localStorage.getItem('mapMarkers');
         savedMarkers = markersJSON ? JSON.parse(markersJSON) : [];
@@ -244,27 +245,15 @@ document.addEventListener("DOMContentLoaded", function () {
         renderSavedMarkersList();
     }
 
-    /**
-     * Saves the current array of markers to localStorage.
-     */
     function saveMarkersToStorage() {
         localStorage.setItem('mapMarkers', JSON.stringify(savedMarkers));
     }
 
-    /**
-     * Adds a marker to the map and the internal tracking object.
-     * @param {object} markerData - The data for the marker to add.
-     */
     function addMarkerToMap(markerData) {
         const { id, lat, lng, type, popupContent } = markerData;
-        const marker = L.marker([lat, lng], { 
-            icon: createIcon(type),
-            draggable: true 
-        }).addTo(map);
-
+        const marker = L.marker([lat, lng], { icon: createIcon(type), draggable: true }).addTo(map);
         marker.bindPopup(popupContent);
         
-        // When a marker is dragged, update its position in storage
         marker.on('dragend', function(event) {
             const updatedMarker = event.target;
             const position = updatedMarker.getLatLng();
@@ -279,11 +268,8 @@ document.addEventListener("DOMContentLoaded", function () {
         leafletMarkers[id] = marker;
     }
 
-    /**
-     * Renders the list of saved markers in the sidebar.
-     */
     function renderSavedMarkersList() {
-        savedMarkersList.innerHTML = ''; // Clear the list first
+        savedMarkersList.innerHTML = '';
         if (savedMarkers.length === 0) {
             savedMarkersList.innerHTML = `<li class="text-center text-sm text-slate-500 p-4 bg-slate-50 rounded-md">No saved places yet.</li>`;
             return;
@@ -301,41 +287,29 @@ document.addEventListener("DOMContentLoaded", function () {
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
             `;
-            // Pan to marker on click
             li.querySelector('.flex-grow').addEventListener('click', () => {
                 map.flyTo([markerData.lat, markerData.lng], 15);
                 leafletMarkers[markerData.id].openPopup();
+                if (window.innerWidth < 640) {
+                    toggleSidebar(false);
+                }
             });
 
-            // Delete marker on button click
-            li.querySelector('.delete-marker-btn').addEventListener('click', () => {
-                removeMarker(markerData.id);
-            });
-
+            li.querySelector('.delete-marker-btn').addEventListener('click', () => removeMarker(markerData.id));
             savedMarkersList.appendChild(li);
         });
     }
 
-    /**
-     * Removes a marker from the map, storage, and UI list.
-     * @param {string} markerId - The ID of the marker to remove.
-     */
     function removeMarker(markerId) {
-        // Remove from map
         if (leafletMarkers[markerId]) {
             map.removeLayer(leafletMarkers[markerId]);
             delete leafletMarkers[markerId];
         }
-        // Remove from storage array
         savedMarkers = savedMarkers.filter(m => m.id !== markerId);
-        // Update storage and UI
         saveMarkersToStorage();
         renderSavedMarkersList();
     }
     
-    /**
-     * Clears all markers from the map, storage, and UI.
-     */
     function clearAllMarkers() {
         Object.values(leafletMarkers).forEach(marker => map.removeLayer(marker));
         leafletMarkers = {};
@@ -346,14 +320,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // --- EVENT HANDLERS --- //
 
-    /**
-     * Handles the click event on the map to place a new marker.
-     * @param {L.LeafletMouseEvent} e - The Leaflet mouse event.
-     */
     function onMapClick(e) {
-        if (!selectedMarkerType) {
-            return; // Do nothing if no marker type is selected
-        }
+        if (!selectedMarkerType) return;
 
         const newMarkerData = {
             id: `marker_${new Date().getTime()}`,
@@ -368,16 +336,12 @@ document.addEventListener("DOMContentLoaded", function () {
         saveMarkersToStorage();
         renderSavedMarkersList();
 
-        // Reset selection
         selectedMarkerType = null;
         document.querySelectorAll('#marker-type-selector button').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
     }
 
     // --- AI SEARCH --- //
 
-    /**
-     * Calls the Gemini API to search for a local business.
-     */
     async function handleAISearch() {
         const query = aiSearchInput.value.trim();
         if (!query) {
@@ -385,13 +349,11 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Show loading state
         searchIcon.classList.add('hidden');
         searchLoader.classList.remove('hidden');
         aiSearchBtn.disabled = true;
 
-        const prompt = `Find a local business based on the following query: "${query}". The user is currently centered on the map at latitude ${mapCenter[0]} and longitude ${mapCenter[1]}. Please provide the result in a structured JSON format.`;
-
+        const prompt = `Find a local business based on the query: "${query}". The user's map is centered near latitude ${mapCenter[0]}, longitude ${mapCenter[1]}. Provide a single, precise result in JSON format.`;
         const payload = {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: {
@@ -399,11 +361,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 responseSchema: {
                     type: "OBJECT",
                     properties: {
-                        "name": { "type": "STRING" },
-                        "category": { "type": "STRING" },
-                        "address": { "type": "STRING" },
-                        "latitude": { "type": "NUMBER" },
-                        "longitude": { "type": "NUMBER" }
+                        "name": { "type": "STRING" }, "category": { "type": "STRING" }, "address": { "type": "STRING" },
+                        "latitude": { "type": "NUMBER" }, "longitude": { "type": "NUMBER" }
                     },
                     required: ["name", "category", "address", "latitude", "longitude"]
                 }
@@ -411,68 +370,54 @@ document.addEventListener("DOMContentLoaded", function () {
         };
 
         try {
-
+            
             const apiKey = "AIzaSyCSh_RzqzDIYGBSEYlCyle_o6yH_5qiO3s"; // API key will be injected by the environment
-
+            
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-            
             const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
             });
-
-            if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`API request failed: ${response.status}`);
             const result = await response.json();
-            
             if (result.candidates && result.candidates.length > 0) {
                 const businessData = JSON.parse(result.candidates[0].content.parts[0].text);
                 addBusinessMarker(businessData);
             } else {
-                throw new Error("No valid business data found in API response.");
+                throw new Error("No valid business data in API response.");
             }
-
         } catch (error) {
             console.error("AI Search Error:", error);
-            alert("Sorry, I couldn't find a result for that search. Please try a different query.");
+            alert("Sorry, I couldn't find a result. Please try another search.");
         } finally {
-            // Hide loading state
             searchIcon.classList.remove('hidden');
             searchLoader.classList.add('hidden');
             aiSearchBtn.disabled = false;
         }
     }
 
-    /**
-     * Adds a business marker from AI search results to the map and storage.
-     * @param {object} business - The business data from the AI.
-     */
     function addBusinessMarker(business) {
         const { name, category, address, latitude, longitude } = business;
-
         const newMarkerData = {
-            id: `marker_${new Date().getTime()}`,
-            lat: latitude,
-            lng: longitude,
-            type: 'BUSINESS',
+            id: `marker_${new Date().getTime()}`, lat: latitude, lng: longitude, type: 'BUSINESS',
             popupContent: `<b>${name}</b><br>${category}<br><i>${address}</i>`
         };
-
         savedMarkers.push(newMarkerData);
         addMarkerToMap(newMarkerData);
         saveMarkersToStorage();
         renderSavedMarkersList();
         
-        // Center map on the new business and open its popup
         map.flyTo([latitude, longitude], 16);
         leafletMarkers[newMarkerData.id].openPopup();
         aiSearchInput.value = '';
+        if (window.innerWidth < 640) {
+            toggleSidebar(false);
+        }
     }
 
     // --- EVENT LISTENERS --- //
+    menuToggleBtn.addEventListener('click', () => toggleSidebar(true));
+    menuCloseBtn.addEventListener('click', () => toggleSidebar(false));
+    menuOverlay.addEventListener('click', () => toggleSidebar(false));
     clearMarkersBtn.addEventListener('click', () => {
         if (confirm('Are you sure you want to delete all saved places?')) {
             clearAllMarkers();
@@ -480,9 +425,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     aiSearchBtn.addEventListener('click', handleAISearch);
     aiSearchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleAISearch();
-        }
+        if (e.key === 'Enter') handleAISearch();
     });
 
     // --- START THE APP --- //
