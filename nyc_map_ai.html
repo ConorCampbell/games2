@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Powered Interactive Map</title>
+
+    <!-- Leaflet CSS for map rendering -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Inter for a clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Custom styles to complement Tailwind */
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent scrollbars on the body */
+        }
+        #map {
+            height: 100%;
+            width: 100%;
+            z-index: 10;
+        }
+        /* Custom Leaflet popup styles */
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-content {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .leaflet-popup-tip {
+            box-shadow: none;
+        }
+        /* Custom scrollbar for the sidebar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+<div id="app" class="flex h-screen w-screen">
+
+    <!-- Sidebar for Controls and Information -->
+    <aside class="w-full sm:w-96 bg-white shadow-lg flex flex-col z-20 h-full">
+        <div class="p-4 border-b border-slate-200">
+            <h1 class="text-2xl font-bold text-slate-800">Map Markers</h1>
+            <p class="text-sm text-slate-500">Pin locations or find businesses with AI.</p>
+        </div>
+
+        <!-- AI Search Section -->
+        <div class="p-4 border-b border-slate-200">
+            <h2 class="text-lg font-semibold text-slate-700 mb-2">Find a Place</h2>
+            <div class="flex space-x-2">
+                <input type="text" id="ai-search-input" placeholder="e.g., 'coffee shop near me'" class="flex-grow border border-slate-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                <button id="ai-search-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition active:scale-95 flex items-center justify-center">
+                    <svg id="search-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <svg id="search-loader" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Marker Type Selection -->
+        <div class="p-4 border-b border-slate-200">
+            <h2 class="text-lg font-semibold text-slate-700 mb-2">Add a Pin</h2>
+            <p class="text-xs text-slate-500 mb-3">Select a type, then click on the map.</p>
+            <div id="marker-type-selector" class="grid grid-cols-2 gap-2">
+                <!-- Marker buttons will be injected here by JavaScript -->
+            </div>
+        </div>
+        
+        <!-- Saved Markers List -->
+        <div class="flex-grow p-4 overflow-y-auto custom-scrollbar">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-lg font-semibold text-slate-700">Saved Places</h2>
+                <button id="clear-markers-btn" class="text-xs text-red-500 hover:text-red-700 font-semibold">Clear All</button>
+            </div>
+            <ul id="saved-markers-list" class="space-y-2">
+                <!-- Saved markers will be listed here -->
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Map Container -->
+    <main class="flex-grow h-full">
+        <div id="map"></div>
+    </main>
+
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // --- CONFIGURATION --- //
+
+    // Defines the different types of markers a user can place.
+    // This makes it easy to add or modify marker types in the future.
+    const MARKER_TYPES = {
+        HOME: {
+            label: 'Home',
+            color: 'blue',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png'
+        },
+        WORK: {
+            label: 'Work',
+            color: 'orange',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png'
+        },
+        FAVORITE: {
+            label: 'Favorite',
+            color: 'red',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png'
+        },
+        FOOD: {
+            label: 'Food',
+            color: 'green',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png'
+        },
+        BUSINESS: { // Special type for AI search results
+            label: 'Business',
+            color: 'violet',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png'
+        }
+    };
+
+    // --- STATE MANAGEMENT --- //
+    let map;
+    let leafletMarkers = {}; // Stores Leaflet marker objects, keyed by marker ID
+    let savedMarkers = []; // Array of marker data objects from localStorage
+    let selectedMarkerType = null; // The currently selected marker type for placing on the map
+    let mapCenter = [40.7128, -74.0060]; // Default to NYC
+
+    // --- UI ELEMENTS --- //
+    const markerTypeSelector = document.getElementById('marker-type-selector');
+    const savedMarkersList = document.getElementById('saved-markers-list');
+    const clearMarkersBtn = document.getElementById('clear-markers-btn');
+    const aiSearchInput = document.getElementById('ai-search-input');
+    const aiSearchBtn = document.getElementById('ai-search-btn');
+    const searchIcon = document.getElementById('search-icon');
+    const searchLoader = document.getElementById('search-loader');
+
+    // --- INITIALIZATION --- //
+
+    /**
+     * Initializes the Leaflet map, sets up the tile layer, and centers it.
+     */
+    function initMap() {
+        map = L.map('map').setView(mapCenter, 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Try to get user's location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const userLatLng = [position.coords.latitude, position.coords.longitude];
+                map.setView(userLatLng, 13);
+                mapCenter = userLatLng;
+                L.marker(userLatLng, { icon: createIcon('grey') })
+                 .addTo(map)
+                 .bindPopup("<b>You are here</b>").openPopup();
+            }, () => {
+                console.warn("Geolocation access denied. Defaulting to NYC.");
+            });
+        }
+        
+        map.on('click', onMapClick);
+    }
+    
+    /**
+     * Populates the sidebar with buttons for each marker type.
+     */
+    function populateMarkerSelectors() {
+        markerTypeSelector.innerHTML = ''; // Clear existing
+        Object.keys(MARKER_TYPES).forEach(key => {
+            if (key === 'BUSINESS') return; // Don't show business as a manual option
+            const type = MARKER_TYPES[key];
+            const button = document.createElement('button');
+            button.className = `w-full border border-slate-300 text-slate-600 rounded-md p-2 text-sm font-medium hover:bg-slate-100 transition focus:ring-2 focus:ring-offset-1 focus:ring-blue-500`;
+            button.dataset.type = key;
+            button.textContent = type.label;
+            button.onclick = () => {
+                selectedMarkerType = key;
+                // Visually indicate selection
+                document.querySelectorAll('#marker-type-selector button').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
+                button.classList.add('bg-blue-600', 'text-white');
+            };
+            markerTypeSelector.appendChild(button);
+        });
+    }
+
+    // --- MARKER & DATA HANDLING --- //
+
+    /**
+     * Creates a Leaflet icon object for a given marker type.
+     * @param {string} typeKey - The key of the marker type (e.g., 'HOME').
+     * @returns {L.Icon} A Leaflet icon instance.
+     */
+    function createIcon(typeKey) {
+        const type = MARKER_TYPES[typeKey] || { iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png' };
+        return L.icon({
+            iconUrl: type.iconUrl,
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+    }
+
+    /**
+     * Loads markers from localStorage and displays them on the map.
+     */
+    function loadMarkersFromStorage() {
+        const markersJSON = localStorage.getItem('mapMarkers');
+        savedMarkers = markersJSON ? JSON.parse(markersJSON) : [];
+        savedMarkers.forEach(markerData => addMarkerToMap(markerData));
+        renderSavedMarkersList();
+    }
+
+    /**
+     * Saves the current array of markers to localStorage.
+     */
+    function saveMarkersToStorage() {
+        localStorage.setItem('mapMarkers', JSON.stringify(savedMarkers));
+    }
+
+    /**
+     * Adds a marker to the map and the internal tracking object.
+     * @param {object} markerData - The data for the marker to add.
+     */
+    function addMarkerToMap(markerData) {
+        const { id, lat, lng, type, popupContent } = markerData;
+        const marker = L.marker([lat, lng], { 
+            icon: createIcon(type),
+            draggable: true 
+        }).addTo(map);
+
+        marker.bindPopup(popupContent);
+        
+        // When a marker is dragged, update its position in storage
+        marker.on('dragend', function(event) {
+            const updatedMarker = event.target;
+            const position = updatedMarker.getLatLng();
+            const markerIndex = savedMarkers.findIndex(m => m.id === id);
+            if (markerIndex > -1) {
+                savedMarkers[markerIndex].lat = position.lat;
+                savedMarkers[markerIndex].lng = position.lng;
+                saveMarkersToStorage();
+            }
+        });
+
+        leafletMarkers[id] = marker;
+    }
+
+    /**
+     * Renders the list of saved markers in the sidebar.
+     */
+    function renderSavedMarkersList() {
+        savedMarkersList.innerHTML = ''; // Clear the list first
+        if (savedMarkers.length === 0) {
+            savedMarkersList.innerHTML = `<li class="text-center text-sm text-slate-500 p-4 bg-slate-50 rounded-md">No saved places yet.</li>`;
+            return;
+        }
+
+        savedMarkers.forEach(markerData => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center justify-between bg-white p-2 rounded-md shadow-sm border border-slate-200';
+            li.innerHTML = `
+                <div class="flex-grow cursor-pointer" data-id="${markerData.id}">
+                    <p class="font-semibold text-slate-800">${MARKER_TYPES[markerData.type]?.label || 'Place'}</p>
+                    <p class="text-xs text-slate-500">${markerData.popupContent.split('<br>')[0].replace(/<b>|<\/b>/g, '')}</p>
+                </div>
+                <button class="delete-marker-btn text-slate-400 hover:text-red-600 p-1" data-id="${markerData.id}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            `;
+            // Pan to marker on click
+            li.querySelector('.flex-grow').addEventListener('click', () => {
+                map.flyTo([markerData.lat, markerData.lng], 15);
+                leafletMarkers[markerData.id].openPopup();
+            });
+
+            // Delete marker on button click
+            li.querySelector('.delete-marker-btn').addEventListener('click', () => {
+                removeMarker(markerData.id);
+            });
+
+            savedMarkersList.appendChild(li);
+        });
+    }
+
+    /**
+     * Removes a marker from the map, storage, and UI list.
+     * @param {string} markerId - The ID of the marker to remove.
+     */
+    function removeMarker(markerId) {
+        // Remove from map
+        if (leafletMarkers[markerId]) {
+            map.removeLayer(leafletMarkers[markerId]);
+            delete leafletMarkers[markerId];
+        }
+        // Remove from storage array
+        savedMarkers = savedMarkers.filter(m => m.id !== markerId);
+        // Update storage and UI
+        saveMarkersToStorage();
+        renderSavedMarkersList();
+    }
+    
+    /**
+     * Clears all markers from the map, storage, and UI.
+     */
+    function clearAllMarkers() {
+        Object.values(leafletMarkers).forEach(marker => map.removeLayer(marker));
+        leafletMarkers = {};
+        savedMarkers = [];
+        saveMarkersToStorage();
+        renderSavedMarkersList();
+    }
+
+    // --- EVENT HANDLERS --- //
+
+    /**
+     * Handles the click event on the map to place a new marker.
+     * @param {L.LeafletMouseEvent} e - The Leaflet mouse event.
+     */
+    function onMapClick(e) {
+        if (!selectedMarkerType) {
+            return; // Do nothing if no marker type is selected
+        }
+
+        const newMarkerData = {
+            id: `marker_${new Date().getTime()}`,
+            lat: e.latlng.lat,
+            lng: e.latlng.lng,
+            type: selectedMarkerType,
+            popupContent: `<b>${MARKER_TYPES[selectedMarkerType].label}</b><br>Added on ${new Date().toLocaleDateString()}`
+        };
+
+        savedMarkers.push(newMarkerData);
+        addMarkerToMap(newMarkerData);
+        saveMarkersToStorage();
+        renderSavedMarkersList();
+
+        // Reset selection
+        selectedMarkerType = null;
+        document.querySelectorAll('#marker-type-selector button').forEach(btn => btn.classList.remove('bg-blue-600', 'text-white'));
+    }
+
+    // --- AI SEARCH --- //
+
+    /**
+     * Calls the Gemini API to search for a local business.
+     */
+    async function handleAISearch() {
+        const query = aiSearchInput.value.trim();
+        if (!query) {
+            alert("Please enter a search query.");
+            return;
+        }
+
+        // Show loading state
+        searchIcon.classList.add('hidden');
+        searchLoader.classList.remove('hidden');
+        aiSearchBtn.disabled = true;
+
+        const prompt = `Find a local business based on the following query: "${query}". The user is currently centered on the map at latitude ${mapCenter[0]} and longitude ${mapCenter[1]}. Please provide the result in a structured JSON format.`;
+
+        const payload = {
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        "name": { "type": "STRING" },
+                        "category": { "type": "STRING" },
+                        "address": { "type": "STRING" },
+                        "latitude": { "type": "NUMBER" },
+                        "longitude": { "type": "NUMBER" }
+                    },
+                    required: ["name", "category", "address", "latitude", "longitude"]
+                }
+            }
+        };
+
+        try {
+
+            const apiKey = "AIzaSyCSh_RzqzDIYGBSEYlCyle_o6yH_5qiO3s"; // API key will be injected by the environment
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.candidates && result.candidates.length > 0) {
+                const businessData = JSON.parse(result.candidates[0].content.parts[0].text);
+                addBusinessMarker(businessData);
+            } else {
+                throw new Error("No valid business data found in API response.");
+            }
+
+        } catch (error) {
+            console.error("AI Search Error:", error);
+            alert("Sorry, I couldn't find a result for that search. Please try a different query.");
+        } finally {
+            // Hide loading state
+            searchIcon.classList.remove('hidden');
+            searchLoader.classList.add('hidden');
+            aiSearchBtn.disabled = false;
+        }
+    }
+
+    /**
+     * Adds a business marker from AI search results to the map and storage.
+     * @param {object} business - The business data from the AI.
+     */
+    function addBusinessMarker(business) {
+        const { name, category, address, latitude, longitude } = business;
+
+        const newMarkerData = {
+            id: `marker_${new Date().getTime()}`,
+            lat: latitude,
+            lng: longitude,
+            type: 'BUSINESS',
+            popupContent: `<b>${name}</b><br>${category}<br><i>${address}</i>`
+        };
+
+        savedMarkers.push(newMarkerData);
+        addMarkerToMap(newMarkerData);
+        saveMarkersToStorage();
+        renderSavedMarkersList();
+        
+        // Center map on the new business and open its popup
+        map.flyTo([latitude, longitude], 16);
+        leafletMarkers[newMarkerData.id].openPopup();
+        aiSearchInput.value = '';
+    }
+
+    // --- EVENT LISTENERS --- //
+    clearMarkersBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to delete all saved places?')) {
+            clearAllMarkers();
+        }
+    });
+    aiSearchBtn.addEventListener('click', handleAISearch);
+    aiSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleAISearch();
+        }
+    });
+
+    // --- START THE APP --- //
+    initMap();
+    populateMarkerSelectors();
+    loadMarkersFromStorage();
+});
+</script>
+
+</body>
+</html>
