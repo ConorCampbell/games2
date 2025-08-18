@@ -242,7 +242,7 @@
         
         @keyframes deal-dealer {
             from {
-                transform: translate(200px, -200px) rotate(270deg);
+                transform: translate(-200px, 200px) rotate(270deg);
                 opacity: 0;
             }
             to {
@@ -469,14 +469,6 @@
             return cardEl;
         }
         
-        function ZZrenderHands() {
-            renderHand(playerHand, playerHandEl);
-            
-            // show the dealers card when the game is done!
-            renderHand(dealerHand, dealerHandEl, gameInProgress);
-            updateScores();
-        }
-
         function renderHand(hand, element, hideFirstCard = false) {
 
             console.log('render-hand');
