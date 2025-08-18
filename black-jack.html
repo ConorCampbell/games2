@@ -217,14 +217,18 @@
         }
         
         /* Animations */
-        .deal-animation {
-            animation: deal 0.5s ease-out;
+        #dealer-hand .deal-animation {
+            animation: deal-dealer 0.5s ease-out;
         }
+        #player-hand .deal-animation {
+            animation: deal-player 0.5s ease-out;
+        }
+        
         .flip-animation {
             animation: flip 0.5s ease-in-out;
         }
 
-        @keyframes deal {
+        @keyframes deal-player {
             from {
                 transform: translate(-200px, -200px) rotate(270deg);
                 opacity: 0;
@@ -234,7 +238,18 @@
                 opacity: 1;
             }
         }
+
         
+        @keyframes deal-dealer {
+            from {
+                transform: translate(200px, -200px) rotate(270deg);
+                opacity: 0;
+            }
+            to {
+                transform: translate(0, 0) rotate(0);
+                opacity: 1;
+            }
+        }
         @keyframes flip {
             from { transform: rotateY(180deg); }
             to { transform: rotateY(0deg); }
