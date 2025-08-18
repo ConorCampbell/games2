@@ -241,20 +241,23 @@
 
         
         @keyframes deal-dealer {
-            from {
+            0% {
                 transform: translate(-200px, 200px) rotate(270deg);
                 opacity: 0;
             }
-            to {
+            50%{
+                opacity:0
+            }
+            100% {
                 transform: translate(0, 0) rotate(0);
                 opacity: 1;
             }
         }
+        
         @keyframes flip {
             from { transform: rotateY(180deg); }
             to { transform: rotateY(0deg); }
         }
-
 
          @media only screen and (max-width: 600px) {
             .body{
