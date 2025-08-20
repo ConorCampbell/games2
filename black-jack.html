@@ -821,6 +821,24 @@
             playerBalance += payout;
             updateBalanceDisplay();
             gameInProgress = false;
+
+            // collapse the hands
+            let i = 1;
+            dealerHandEl.querySelectorAll(".card").forEach(e => {
+                setTimeout(() => {
+                    e.style.left = "0px";
+                }, 250 * i);   // multiply so each is delayed more
+                i += 1;
+            });
+
+            let i = 1;
+            playerHandEl.querySelectorAll(".card").forEach(e => {
+                setTimeout(() => {
+                    e.style.left = "0px";
+                }, 250 * i);   // multiply so each is delayed more
+                i += 1;
+            });
+            
             
             setTimeout(() => {
                 if (playerBalance > 0) {
@@ -835,6 +853,7 @@
                 currentBet = 0;
                 updateBetDisplay();
             }, 2500);
+            
         }
         
         function resetRound() {
