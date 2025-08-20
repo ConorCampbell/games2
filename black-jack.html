@@ -240,7 +240,7 @@
         }
         
         .toss-card-animation {
-            animation: toss-card 0.5s ease-in-out
+            animation: toss-card 0.5s ease-in-out;
             animation-delay:.75s
         }
         
@@ -845,7 +845,7 @@
             dealerHandEl.querySelectorAll(".card").forEach(e => {
                 setTimeout(() => {
                     e.style.left = "0px";
-                    e.classList.add('.toss-card-animation');
+                    e.classList.add('toss-card-animation');
                 }, 250 * i);   // multiply so each is delayed more
                 i += 1;
             });
