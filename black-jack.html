@@ -42,10 +42,14 @@
             background-color: var(--felt-green);
             min-height: 100vh;
             padding: 2rem 2rem 200px 2rem; /* Added bottom padding for controls */
-            max-width: 1400px;
+            max-width: 1000px;
             box-shadow: inset 0 10px 20px rgba(0,0,0,0.4);
         }
         
+        #betting-controls{
+            max-width: 1200px;
+        }
+
         /* Card Styles */
         .hand-container {
             min-height: 150px;
@@ -105,6 +109,10 @@
         .card-suit {
             font-size: 1.2rem; /* Adjusted font size */
             line-height: 1; /* Prevents overflow */
+        }
+
+        #game-info{ 
+            height: 200px
         }
         .card-suit-center {
             font-size: 3rem;
@@ -276,6 +284,9 @@
             .game-controls, .betting-controls{
                 padding: .5em;
             }
+            #game-info{ 
+               height: 75px;
+            }
             .game-table{
                 padding: 1rem 1rem 80px 1rem;
             }
@@ -285,19 +296,39 @@
              #message-box{
                  font-size: 1.2em
              }
+             #deck-container{
+                 width: 25px;
+                height: 30px;
+              
+             }
+            .card {
+                 width: 75px;
+                height: 100px;
+            }
+            .hand-container{
+                min-height: 100px;            
+            }
+            .card-suit-center {
+                font-size: 1rem;
+            }
+            .card-front .card-suit{
+                display:none;
+            }
+            .hand-title{
+                font-size: 1em;
+            }
         }
-
     </style>
 </head>
-<body class="d-flex align-items-center">
+<body class="">
 
     <div class="container-fluid">
         <div class="game-table mx-auto">
             
             <!-- Dealer's Area -->
-            <div class="row text-center mb-1 mb-md-3">
-                <div class="col col-4">
-                    <h2 class="display-8">Dealer's Hand <span id="dealer-score" class="score-display d-none"></span></h2>
+            <div class="row text-center m-4">
+                <div class="col col-4 my-auto">
+                    <h2 class="hand-title">Dealer's Hand <span id="dealer-score" class="score-display d-none"></span></h2>
                 </div>
                 <div class="col col-8">
                     <div id="dealer-hand" class="hand-container d-flex justify-content-center align-items-center"></div>
@@ -305,9 +336,9 @@
             </div>
 
             <!-- Game Info & Deck -->
-            <div class="row text-center align-items-center position-relative">
+            <div id="game-info" class="row text-center align-items-center position-relative">
                 <div class="col-4">
-                    <div id="deck-container d-none d-md-block">
+                    <div id="deck-container">
                         <!-- Visual representation of the deck -->
                         <div class="deck-card" style="top: 0; left: 0;"></div>
                         <div class="deck-card" style="top: 2px; left: 2px;"></div>
@@ -315,25 +346,41 @@
                     </div>
                     <p id="cards-left" class="mt-2">Cards: 52</p>
                 </div>
-                <div class="col">
-                    <div id="message-box" class="d-flex justify-content-center align-items-center">Place your bet!</div>
-                </div>
-                
+
             </div>
 
             <!-- Player's Area -->
-            <div class="row text-center mt-1 mt-md-3">
-                <div class="col-4 mt-auto">
-                    <h2 class="display-8">Player's Hand <span id="player-score" class="score-display d-none"></span></h2>
+            <div class="row text-center m-4">
+                <div class="col-4 my-auto">
+                    <h2 class="hand-title">Player's Hand <span id="player-score" class="mt-1 score-display d-none"></span></h2>
                 </div>
                 <div class="col-8">
                     <div id="player-hand" class="hand-container d-flex justify-content-center align-items-center"></div>
                 </div>
             </div>
 
+            <div class="row text-center m-1">
+                <div class="col">
+                    <div id="message-box" class="d-flex justify-content-center align-items-center">Place your bet!</div>
+                </div>
+
+                <button id="btn-deal" class="btn btn-game btn-deal">Deal</button>
+
+                
+                <!-- Game Action Buttons -->
+                <div class="col text-center my-1 my-md-0">
+                    <div id="action-buttons" class="game-controls d-flex justify-content-center gap-2">
+                        <button id="btn-hit" class="btn btn-game btn-hit" disabled>Hit</button>
+                        <button id="btn-stand" class="btn btn-game btn-stand" disabled>Stand</button>
+                        <button id="btn-double" class="btn btn-game btn-double" disabled>Double</button>
+                    </div>
+                </div>
+
+            </div>
+
             <!-- Betting & Controls -->
-            <div class="position-fixed bottom-0 start-0 end-0 p-1 pd-md-3" style="background-color: var(--dark-wood);">
-                <div class="container">
+            <div  class="position-fixed bottom-0 start-0 end-0 p-1 pd-md-3" style="background-color: var(--dark-wood);">
+                <div id="betting-controls" class="container">
                     <div class="row align-items-center">
                         <!-- Betting Area -->
                         <div class="col-md-4 text-center">
@@ -349,16 +396,6 @@
                             </div>
                         </div>
                         
-                        <!-- Game Action Buttons -->
-                        <div class="col-md-4 text-center my-1 my-md-0">
-                            <div id="action-buttons" class="game-controls d-flex justify-content-center gap-2">
-                                <button id="btn-deal" class="btn btn-game btn-deal">Deal</button>
-                                <button id="btn-hit" class="btn btn-game btn-hit" disabled>Hit</button>
-                                <button id="btn-stand" class="btn btn-game btn-stand" disabled>Stand</button>
-                                <button id="btn-double" class="btn btn-game btn-double" disabled>Double</button>
-                            </div>
-                        </div>
-
                         <!-- Chip Selection -->
                         <div class="col-md-4">
                             <div id="chip-area" class="betting-controls d-flex justify-content-evenly align-items-center">
@@ -414,6 +451,7 @@
             createDeck();
             shuffleDeck();
             updateCardsLeftDisplay();
+            toggleActionButtons(false, false, false);
         }
 
         // --- DECK MANAGEMENT ---
@@ -481,10 +519,9 @@
         
         function renderHand(hand, element, hideFirstCard = false) {
 
-            console.log('render-hand');
+            // console.log('render-hand');
             // element.innerHTML = '';
             // element.innerHTML = '';
-
             
             if (hand.length > 0) {
 
@@ -496,7 +533,7 @@
                         topCardEl.style.top = "4px";
                     }
                 }, 750);
-                
+
                 const index = hand.length - 1;
 
                 const isHidden = hideFirstCard && index === 0;
@@ -509,7 +546,10 @@
                 cardEl.classList.add('deal-animation');
                 element.appendChild(cardEl);
 
-                updateScores();
+                setTimeout(() => {
+                    updateScores();
+                }, 750);
+
             }
 
             // hand.forEach((card, index) => {
@@ -578,10 +618,21 @@
         }
         
         function toggleActionButtons(canDeal, canHitStand, canDouble) {
-            btnDeal.disabled = !canDeal;
+            
+            console.log("action")
+            btnDeal.style.display = canDeal ? "block" : "none";
+            
+            if (!canHitStand && !canDouble){
+                document.getElementById("action-buttons").classList.add('d-none')    
+            }else{
+                document.getElementById("action-buttons").classList.remove('d-none')    
+            }
+            
+            
             btnHit.disabled = !canHitStand;
             btnStand.disabled = !canHitStand;
             btnDouble.disabled = !canDouble;
+
         }
 
         // --- BETTING LOGIC ---
@@ -594,6 +645,11 @@
                     playerBalance -= value;
                     updateBalanceDisplay();
                     updateBetDisplay();
+
+                    toggleActionButtons(true, false, false);
+                    
+                    displayMessage("");
+
                     bettingArea.classList.add('active');
                 } else {
                     displayMessage("Not enough balance!", true);
@@ -607,6 +663,9 @@
             currentBet = 0;
             updateBalanceDisplay();
             updateBetDisplay();
+            toggleActionButtons(false, false, false);
+
+            displayMessage("Place your bet!")
             bettingArea.classList.remove('active');
         });
 
@@ -645,12 +704,14 @@
                 checkForBlackjack();
             }, 1550);
 
-
+            console.log('toggle action buttons start')
             toggleActionButtons(false, true, playerBalance >= currentBet);
+
             chipArea.style.pointerEvents = 'none';
             btnClearBet.disabled = true;
             bettingArea.classList.remove('active');
             displayMessage("");
+
         }
         
         function checkForBlackjack() {
@@ -728,8 +789,9 @@
         }
 
         function revealDealerCard() {
+
             gameInProgress = false; // Reveal the card
-            // renderHands();
+
             renderHand(dealerHand, dealerHandEl, gameInProgress)
 
             const firstCard = dealerHandEl.querySelector('.card');
@@ -763,7 +825,7 @@
             setTimeout(() => {
                 if (playerBalance > 0) {
                     displayMessage("Place your bet for the next round.");
-                    toggleActionButtons(true, false, false);
+                    toggleActionButtons(false, false, false);
                     chipArea.style.pointerEvents = 'auto';
                     btnClearBet.disabled = false;
                 } else {
