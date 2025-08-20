@@ -251,7 +251,7 @@
                 opacity: 1;
             }
             to {
-                transform: translate(1200px, 1200px) rotate(270deg);
+                transform: translate(1200px, -1200px) rotate(270deg);
                 opacity: 0;
             }
         }
@@ -845,6 +845,7 @@
             dealerHandEl.querySelectorAll(".card").forEach(e => {
                 setTimeout(() => {
                     e.style.left = "0px";
+                    e.classList.remove('deal-animation');
                     e.classList.add('toss-card-animation');
                 }, 250 * i);   // multiply so each is delayed more
                 i += 1;
@@ -854,6 +855,7 @@
             playerHandEl.querySelectorAll(".card").forEach(e => {
                 setTimeout(() => {
                     e.style.left = "0px";
+                    e.classList.remove('deal-animation');
                     e.classList.add('toss-card-animation');
                 }, 250 * i);   // multiply so each is delayed more
                 i += 1;
