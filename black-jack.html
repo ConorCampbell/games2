@@ -787,6 +787,7 @@
         });
         
         function dealerTurn() {
+            
             toggleActionButtons(false, false, false);
             revealDealerCard();
             
@@ -796,7 +797,6 @@
                     dealerHand.push(dealCard());
                     // renderHands();
                     renderHand(dealerHand, dealerHandEl, gameInProgress)
-
                     setTimeout(playDealerHand, 1000); // Delay for each dealer hit
                 } else {
                     determineWinner();
@@ -838,6 +838,8 @@
             displayMessage(message);
             playerBalance += payout;
             updateBalanceDisplay();
+            
+            // TODO ADD confettit
             gameInProgress = false;
 
             // collapse the hands
