@@ -14,6 +14,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
     <style>
+
+        /*for the confetti*/
+        particle {
+            position: fixed;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            z-index: 5000;
+            pointer-events: none;
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+
         /* Custom Styles for the Casino Feel */
         :root {
             --casino-green: #0a4723;
@@ -431,6 +444,9 @@
         </div>
     </div>
 
+    <script src="static/js/fireworks.js"></script>
+    <script src="static/js/keyboard.js"></script>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         // DOM Elements
@@ -566,6 +582,7 @@
 
                 setTimeout(() => {
                     updateScores();
+                    btnHit.disabled = false;
                 }, 750);
 
             }
@@ -658,12 +675,13 @@
             if (gameInProgress) return;
             if (e.target.classList.contains('chip')) {
                 const value = parseInt(e.target.dataset.value);
+                
                 if (playerBalance >= value) {
                     currentBet += value;
                     playerBalance -= value;
+                
                     updateBalanceDisplay();
                     updateBetDisplay();
-
                     toggleActionButtons(true, false, false);
                     
                     displayMessage("");
@@ -677,6 +695,7 @@
         
         btnClearBet.addEventListener('click', () => {
             if (gameInProgress) return;
+            
             playerBalance += currentBet;
             currentBet = 0;
             updateBalanceDisplay();
@@ -696,6 +715,9 @@
                 return;
             }
             
+            btnDeal.style.display = "none";
+            // btnDeal.disabled = true;
+
             gameInProgress = true;
             resetRound();
 
@@ -723,7 +745,10 @@
             }, 1550);
 
             console.log('toggle action buttons start')
-            toggleActionButtons(false, true, playerBalance >= currentBet);
+
+            setTimeout(() => {
+                toggleActionButtons(false, true, playerBalance >= currentBet);
+            }, 2000);
 
             chipArea.style.pointerEvents = 'none';
             btnClearBet.disabled = true;
@@ -750,12 +775,15 @@
         }
         
         btnHit.addEventListener('click', () => {
+            
             playerHand.push(dealCard());
             
             // renderHands();
+            btnHit.disabled = true;
             renderHand(playerHand, playerHandEl)
-
+            
             btnDouble.disabled = true;
+
             if (calculateHandValue(playerHand) > 21) {
                 endRound("Bust! You lose.", 0);
             }
@@ -820,6 +848,7 @@
         }
 
         function determineWinner() {
+
             const finalPlayerScore = calculateHandValue(playerHand);
             const finalDealerScore = calculateHandValue(dealerHand);
 
@@ -837,9 +866,15 @@
         function endRound(message, payout) {
             displayMessage(message);
             playerBalance += payout;
-            updateBalanceDisplay();
-            
+            updateBalanceDisplay();            
+
             // TODO ADD confettit
+            if (payout > currentBet){
+                is_sound_allowed = false;
+                console.log("confetti")
+                popConfetti(playerBalanceEl)
+            };
+
             gameInProgress = false;
 
             // collapse the hands
@@ -847,8 +882,8 @@
             dealerHandEl.querySelectorAll(".card").forEach(e => {
                 setTimeout(() => {
                     e.style.left = "0px";
-                    e.classList.remove('deal-animation');
-                    e.classList.add('toss-card-animation');
+                    // e.classList.remove('deal-animation');
+                    // e.classList.add('toss-card-animation');
                 }, 250 * i);   // multiply so each is delayed more
                 i += 1;
             });
@@ -857,12 +892,11 @@
             playerHandEl.querySelectorAll(".card").forEach(e => {
                 setTimeout(() => {
                     e.style.left = "0px";
-                    e.classList.remove('deal-animation');
-                    e.classList.add('toss-card-animation');
+                    // e.classList.remove('deal-animation');
+                    // e.classList.add('toss-card-animation');
                 }, 250 * i);   // multiply so each is delayed more
                 i += 1;
-            });
-            
+            });            
             
             setTimeout(() => {
                 if (playerBalance > 0) {
@@ -870,6 +904,9 @@
                     toggleActionButtons(false, false, false);
                     chipArea.style.pointerEvents = 'auto';
                     btnClearBet.disabled = false;
+                    
+                    resetRound();
+
                 } else {
                     displayMessage("Game Over! You're out of money.");
                     toggleActionButtons(false, false, false);
@@ -879,8 +916,9 @@
             }, 2500);
             
         }
-        
+
         function resetRound() {
+            btnDeal.disabled = false;
             playerHand = [];
             dealerHand = [];
             playerHandEl.innerHTML = '';

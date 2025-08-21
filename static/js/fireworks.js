@@ -16,7 +16,7 @@ function popFart(e) {
 //Exploding Particles ..
 function popConfetti(e) {
   //trigger some confetti
-
+console.log('showing confetti')
   // pick a win sound
   var sounds = [
     "static/sound/win.mp3",
@@ -39,7 +39,7 @@ function popConfetti(e) {
   //choose a random effect
   //var effects = ['square','emoji','ff','mario','shadow','line'];
 
-  var effects = ["square", "emoji", "shadow", "line"];
+  var effects = ["square", "emoji", "shadow", "star", "star", "emoji"];
   var effect = effects[Math.floor(Math.random() * effects.length)];
 
   for (let i = 0; i < amount; i++) {
@@ -188,6 +188,7 @@ function createParticle(x, y, type) {
       rotation += 1000;
       delay = Math.random() * 1000;
       break;
+
   }
 
   particle.style.width = `${width}px`;
