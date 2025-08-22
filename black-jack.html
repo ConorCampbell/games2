@@ -168,10 +168,17 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
+        
+        .btn:hover{
+            background-color: inherit!important;
+        }
+
         .btn-game:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 8px rgba(0,0,0,0.3);
+            /* background-color: inherit!important; */
         }
+
         .btn-deal { background-color: var(--gold-accent); color: #333; border: none; }
         .btn-hit { background-color: var(--chip-green); color: white; border: none; }
         .btn-stand { background-color: var(--chip-red); color: white; border: none; }
@@ -406,9 +413,9 @@
                 <!-- Game Action Buttons -->
                 <div class="col text-center my-1 my-md-0">
                     <div id="action-buttons" class="game-controls d-flex justify-content-center gap-2">
-                        <button id="btn-hit" class="btn btn-game btn-hit" disabled>Hit</button>
-                        <button id="btn-stand" class="btn btn-game btn-stand" disabled>Stand</button>
-                        <button id="btn-double" class="btn btn-game btn-double" disabled>Double</button>
+                        <div id="btn-hit" class=" btn-game btn-hit" disabled>Hit</div>
+                        <div id="btn-stand" class=" btn-game btn-stand" disabled>Stand</div>
+                        <div id="btn-double" class=" btn-game btn-double" disabled>Double</div>
                     </div>
                 </div>
 
