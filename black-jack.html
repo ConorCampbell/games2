@@ -773,17 +773,18 @@
                     endRound("Push! Both have Blackjack.", currentBet);
                 } else {
                     
-                    popConfetti(playerHand);
+                    popConfetti(playerHandEl);
+                    
                     displayMessage("Black Jack!");
-                    playerHand.classList.add('black-jack');
+                    playerHandEl.classList.add('black-jack');
 
                     // todo: disablee buttons
                     toggleActionButtons(false,false,false);
                     
                     setTimeout(() => {
                         endRound("Blackjack! You win!", currentBet * 2.5); // 3:2 payout
-                        playerHand.classList.remove('black-jack')
-                    }, 1000);
+                        playerHandEl.classList.remove('black-jack')
+                    }, 1500);
                     
                 }
             } else if (revealedDealerScore === 21) {
