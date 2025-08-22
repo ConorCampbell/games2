@@ -244,6 +244,11 @@
         #dealer-hand .deal-animation {
             animation: deal-dealer 0.5s ease-out;
         }
+
+        #player-hand .black-jack {
+            transform: scale(1.5);
+        }
+        
         #player-hand .deal-animation {
             animation: deal-player 0.5s ease-out;
         }
@@ -763,10 +768,21 @@
             const revealedDealerScore = calculateHandValue(dealerHand);
 
             if (playerScore === 21) {
+                
                 if (revealedDealerScore === 21) {
                     endRound("Push! Both have Blackjack.", currentBet);
                 } else {
-                    endRound("Blackjack! You win!", currentBet * 2.5); // 3:2 payout
+                    
+                    popConfettti(playHand)
+                    displayMessage("Black Jack!")
+                    playerHand.classList.add('black-jack')
+                    
+                    setTimeout(() => {
+                        endRound("Blackjack! You win!", currentBet * 2.5); // 3:2 payout
+                        playerHand.classList.remove('black-jack')
+                    
+                    }, 750);
+                    
                 }
             } else if (revealedDealerScore === 21) {
                 revealDealerCard();
@@ -865,6 +881,7 @@
 
         function endRound(message, payout) {
             displayMessage(message);
+            
             playerBalance += payout;
             updateBalanceDisplay();            
 
