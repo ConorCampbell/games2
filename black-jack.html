@@ -864,11 +864,12 @@
         });
         
         function dealerTurn() {
-            
+
+            gameInProgress = false;
             toggleActionButtons(false, false, false);
             
             revealDealerCard();
-            calculateHandValue(dealerHand)
+            updateScores();
             
             const playDealerHand = () => {
                 let finalDealerScore = calculateHandValue(dealerHand);
