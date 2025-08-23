@@ -252,7 +252,8 @@
             animation: deal-dealer 0.5s ease-out;
         }
 
-        #player-hand.black-jack .card {
+        #player-hand.black-jack .card,
+        #dealer-hand.black-jack .card{
             transform: scale(1.5);
         }
         
@@ -799,16 +800,16 @@
             } else if (revealedDealerScore === 21) {
                 revealDealerCard();
 
-                displayMessage("Dealer Black Jack!");
-                    dealerHandEl.classList.add('black-jack');
+                displayMessage("Dealer Black Jack!", true); // flash a message
+                
+                dealerHandEl.classList.add('black-jack'); //enlarge the cards
 
-                    // todo: disablee buttons
-                    toggleActionButtons(false,false,false);
+                toggleActionButtons(false,false,false); // disable buttons
                     
-                    setTimeout(() => {
+                setTimeout(() => {
                         endRound("Dealer has Blackjack. You lose.", 0);
                         dealerHandEl.classList.remove('black-jack')
-                    }, 1500)
+                }, 1500)
             
             }
         }
