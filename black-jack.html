@@ -613,9 +613,10 @@
         }
 
         function updateScores() {
+
             playerScore = calculateHandValue(playerHand);
             dealerScore = calculateHandValue(dealerHand, gameInProgress);
-            
+
             playerScoreEl.textContent = playerScore;
             playerScoreEl.classList.remove('d-none');
             
@@ -623,6 +624,22 @@
             if (dealerScore > 0) {
               dealerScoreEl.classList.remove('d-none');
             }
+
+            console.log("checking for 21")
+            // if the player has 21 then disable hit buttons
+            // pass the turn to the dealer
+            if (playerScore == 21 && gameInProgress) {
+                displayMessage("Player has 21!", true);
+                
+                gameInProgress = false;
+                toggleActionButtons(false, false, false);
+                
+                setTimeout(() => {
+                     dealerTurn();
+                 }, 1000);
+
+            };
+
         }
 
         function calculateHandValue(hand, hideFirstCard = false) {
@@ -772,6 +789,7 @@
         }
         
         function checkForBlackjack() {
+
             playerScore = calculateHandValue(playerHand);
             dealerScore = calculateHandValue(dealerHand, true);
             const revealedDealerScore = calculateHandValue(dealerHand);
@@ -796,6 +814,7 @@
                     }, 1500);
                     
                 }
+
             } else if (revealedDealerScore === 21) {
                 revealDealerCard();
                 endRound("Dealer has Blackjack. You lose.", 0);
@@ -823,6 +842,8 @@
         
         btnDouble.addEventListener('click', () => {
             if (playerBalance >= currentBet) {
+
+                toggleActionButtons(false, false, false);
                 playerBalance -= currentBet;
                 currentBet *= 2;
                 updateBalanceDisplay();
@@ -832,8 +853,6 @@
 
                 renderHand(playerHand, playerHandEl)
 
-                // renderHands();
-                
                 if (calculateHandValue(playerHand) > 21) {
                     endRound("Bust! You lose on double down.", 0);
                 } else {
@@ -942,6 +961,7 @@
                 }
                 currentBet = 0;
                 updateBetDisplay();
+
             }, 2500);
             
         }
