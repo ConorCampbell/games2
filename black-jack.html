@@ -798,7 +798,18 @@
                 }
             } else if (revealedDealerScore === 21) {
                 revealDealerCard();
-                endRound("Dealer has Blackjack. You lose.", 0);
+
+                displayMessage("Dealer Black Jack!");
+                    dealerHandEl.classList.add('black-jack');
+
+                    // todo: disablee buttons
+                    toggleActionButtons(false,false,false);
+                    
+                    setTimeout(() => {
+                        endRound("Dealer has Blackjack. You lose.", 0);
+                        dealerHandEl.classList.remove('black-jack')
+                    }, 1500)
+            
             }
         }
         
@@ -815,6 +826,16 @@
             if (calculateHandValue(playerHand) > 21) {
                 endRound("Bust! You lose.", 0);
             }
+
+            // check for player 21 to pass to dealer
+            if (gameInProgress && calculateHandValue(playerHand) == 21) {
+                displayMessage("Player has 21!",true)
+                gameInProgress = false;
+                dealerTurn();
+                
+            }
+
+            
         });
 
         btnStand.addEventListener('click', () => {
