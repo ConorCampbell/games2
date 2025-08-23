@@ -866,6 +866,7 @@
         function dealerTurn() {
             
             toggleActionButtons(false, false, false);
+            
             revealDealerCard();
             
             const playDealerHand = () => {
@@ -887,7 +888,7 @@
 
             gameInProgress = false; // Reveal the card
 
-            renderHand(dealerHand, dealerHandEl, gameInProgress)
+            // renderHand(dealerHand, dealerHandEl, gameInProgress)
 
             const firstCard = dealerHandEl.querySelector('.card');
             if (firstCard && firstCard.classList.contains('flipped')) {
