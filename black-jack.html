@@ -389,6 +389,7 @@
                         <div class="deck-card card-back deck-card-top" style="top: 4px; left: 4px;"></div>
                     </div>
                     <p id="cards-left" class="mt-2">Cards: 52</p>
+                    <p id="cards-dealt" class="mt-1 small"></p>
                 </div>
 
             </div>
@@ -470,6 +471,8 @@
         const playerBalanceEl = document.getElementById('player-balance');
         const currentBetEl = document.getElementById('current-bet');
         const cardsLeftEl = document.getElementById('cards-left');
+
+        const cardsDealtEl = document.getElementById('cards-dealt');
         
         const btnDeal = document.getElementById('btn-deal');
         const btnHit = document.getElementById('btn-hit');
@@ -489,6 +492,11 @@
         let playerBalance = 1000;
         let currentBet = 0;
         let gameInProgress = false;
+
+        let count_tens = 0;    
+        let count_aces = 0;
+        let count_low = 0;            
+
         const CUT_CARD_POSITION = 8; // Reshuffle when 8 cards are left
 
         is_sound_allowed = false;
@@ -507,6 +515,11 @@
             const suits = ['♥', '♦', '♣', '♠'];
             const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
             deck = [];
+
+            count_tens = 0;    
+            count_aces = 0;
+            count_low = 0;
+
             for (const suit of suits) {
                 for (const rank of ranks) {
                     deck.push({ suit, rank, value: getCardValue(rank) });
@@ -526,9 +539,33 @@
                 displayMessage("Cutting the shoe... Reshuffling.", true);
                 createDeck();
                 shuffleDeck();
+
+                // here we reset the counts of tens and aces
+
             }
+            
+            let card = deck.pop();
+
+            console.log("dealing card", card)
+
+            if (card.value == 10){
+                // increment count of tens
+                count_tens += 1;
+            }
+
+            if (card.rank == 'A'){
+                // increment count of aces
+                count_aces += 1;    
+            }
+            if (card.value < 5){
+                // increment count of low cards
+                count_low += 1;    
+            }
+
             updateCardsLeftDisplay();
-            return deck.pop();
+
+            return card;
+
         }
 
         function getCardValue(rank) {
@@ -670,6 +707,11 @@
         
         function updateCardsLeftDisplay() {
             cardsLeftEl.textContent = `Cards: ${deck.length}`;
+
+            cardsDealtEl.textContent = `10s: ${count_tens}`
+            cardsDealtEl.textContent += ` | Aces: ${count_aces}`
+            cardsDealtEl.textContent += ` | Low: ${count_low}`
+
         }
 
         function displayMessage(msg, isTemporary = false) {
