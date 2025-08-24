@@ -252,7 +252,8 @@
             animation: deal-dealer 0.5s ease-out;
         }
 
-        #player-hand.black-jack .card {
+        #player-hand.black-jack .card,
+        #dealer-hand.black-jack .card{
             transform: scale(1.5);
         }
         
@@ -409,13 +410,12 @@
 
                 <button id="btn-deal" class="btn btn-game btn-deal">Deal</button>
 
-                
                 <!-- Game Action Buttons -->
                 <div class="col text-center my-1 my-md-0">
                     <div id="action-buttons" class="game-controls d-flex justify-content-center gap-2">
-                        <div id="btn-hit" class=" btn-game btn-hit" disabled>Hit</div>
-                        <div id="btn-stand" class=" btn-game btn-stand" disabled>Stand</div>
-                        <div id="btn-double" class=" btn-game btn-double" disabled>Double</div>
+                        <button id="btn-hit" class=" btn-game btn-hit" disabled>Hit</button>
+                        <button id="btn-stand" class=" btn-game btn-stand" disabled>Stand</button>
+                        <button id="btn-double" class=" btn-game btn-double" disabled>Double</button>
                     </div>
                 </div>
 
@@ -817,7 +817,18 @@
 
             } else if (revealedDealerScore === 21) {
                 revealDealerCard();
-                endRound("Dealer has Blackjack. You lose.", 0);
+
+                displayMessage("Dealer Black Jack!", true); // flash a message
+                
+                dealerHandEl.classList.add('black-jack'); //enlarge the cards
+
+                toggleActionButtons(false,false,false); // disable buttons
+                    
+                setTimeout(() => {
+                        endRound("Dealer has Blackjack. You lose.", 0);
+                        dealerHandEl.classList.remove('black-jack')
+                }, 1500)
+            
             }
         }
         
@@ -834,6 +845,16 @@
             if (calculateHandValue(playerHand) > 21) {
                 endRound("Bust! You lose.", 0);
             }
+
+            // check for player 21 to pass to dealer
+            if (gameInProgress && calculateHandValue(playerHand) == 21) {
+                displayMessage("Player has 21!",true)
+                gameInProgress = false;
+                dealerTurn();
+                
+            }
+
+            
         });
 
         btnStand.addEventListener('click', () => {
@@ -862,9 +883,12 @@
         });
         
         function dealerTurn() {
-            
+
+            gameInProgress = false;
             toggleActionButtons(false, false, false);
+            
             revealDealerCard();
+            updateScores();
             
             const playDealerHand = () => {
                 let finalDealerScore = calculateHandValue(dealerHand);
@@ -885,7 +909,7 @@
 
             gameInProgress = false; // Reveal the card
 
-            renderHand(dealerHand, dealerHandEl, gameInProgress)
+            // renderHand(dealerHand, dealerHandEl, gameInProgress)
 
             const firstCard = dealerHandEl.querySelector('.card');
             if (firstCard && firstCard.classList.contains('flipped')) {
