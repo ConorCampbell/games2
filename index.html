@@ -1,137 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GameZone Landing Page</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    body {
-      background: linear-gradient(135deg, #1f1c2c, #928dab);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Segoe UI', sans-serif;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameZone Landing Page</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: linear-gradient(135deg, #1f1c2c, #928dab);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Segoe UI", sans-serif;
+      }
 
-    .card {
-    height: 80vh;
-      background-color: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(10px);
-      border: none;
-      border-radius: 1rem;
-      padding: 2rem;
-      text-align: center;
-      color: white;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    }
+      .card {
+        height: 80vh;
+        background-color: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        color: white;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      }
 
       .card-body {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            gap: .25rem;
-        }
-        .card-body .game-btn {
-            flex: 1 1 0;
-            min-height: 0;
-            margin: 0;
-        } 
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        gap: 0.25rem;
+      }
 
-    .game-btn:hover {
-      transform: scale(1.05);
-      
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-      color: #fff;
-      text-decoration: none;
-      cursor: pointer;
-      background-color: inherit!important;
-    }
-    
-    .game-btnk:checked{
-      background-color: inherit!important;
-    }
+      .card-body .game-btn {
+        flex: 1 1 0;
+        min-height: 0;
+        margin: 0;
+      }
 
-    .game-btn {
-      position: relative;
-      margin: .25rem 0;
-      /* height: 4rem; */
-      padding: 0.75rem 2rem;
-      font-size: 1.25rem;
-      border-radius: 2rem;
-      transition: 0.3s ease;
-      
-      overflow: hidden;
-      color: #fff;
-      z-index: 1;
+      .game-btn:hover {
+        transform: scale(1.05);
 
-      aspect-ratio: 2 / 1;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        color: #fff;
+        text-decoration: none;
+        cursor: pointer;
+        background-color: inherit !important;
+      }
 
-    }
+      .game-btnk:checked {
+        background-color: inherit !important;
+      }
 
-    .game-btn-bg {
-            position: absolute;
-            
-            top: 0; left: 0;
-            width: 100%; 
-            height: 100%;
-            object-fit: cover;
-            opacity: 0.35;
-            z-index: 0;
-            transition: opacity 0.3s;
-        }
+      .game-btn {
+        position: relative;
+        margin: 0.25rem 0;
+        /* height: 4rem; */
+        padding: 0.75rem 2rem;
+        font-size: 1.25rem;
+        border-radius: 2rem;
+        transition: 0.3s ease;
 
-        .game-btn:hover .game-btn-bg {
-            opacity: 0.55;
-        }
+        overflow: hidden;
+        color: #fff;
+        z-index: 1;
 
-        .game-btn span {
-            position: relative;
-            z-index: 1;
-        }
+        aspect-ratio: 2 / 1;
+      }
 
-  </style>
-</head>
-<body>
+      .game-btn-bg {
+        position: absolute;
 
-  <div class="container container-fluid card vh-100">
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.35;
+        z-index: 0;
+        transition: opacity 0.3s;
+      }
 
-    <h1 class="card-header mb-1">🎮GameZone</h1>
+      .game-btn:hover .game-btn-bg {
+        opacity: 0.55;
+      }
 
-    <div class="row g-0">
-      <div class="col-12 col-md-6 btn  game-btn " onclick="location.href='car-race.html'">
-        <img src="static/img/car.jpg" alt="" class="game-btn-bg">
-        <span>Race</span>    
+      .game-btn span {
+        position: relative;
+        z-index: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container container-fluid card vh-100">
+      <h1 class="card-header mb-1">🎮GameZone</h1>
+
+      <div class="row g-0">
+        <div
+          class="col-12 col-md-6 btn game-btn"
+          onclick="location.href='car-race.html'"
+        >
+          <img src="static/img/car.jpg" alt="" class="game-btn-bg" />
+          <span>Race</span>
+        </div>
+        
+        <div
+          class="col-12 col-md-6 btn game-btn"
+          onclick="location.href='bomb-works2.html'"
+        >
+          <img src="static/img/plane.jpg" alt="" class="game-btn-bg" />
+          <span>Bomb</span>
+        </div>
+
+        <div
+          class="col-12 col-md-6 btn game-btn"
+          onclick="location.href='map_game.html'"
+        >
+          <img src="static/img/map-game.jpg" alt="" class="game-btn-bg" />
+          <span>Countries</span>
+        </div>
+
+        <div
+          class="col-12 col-md-6 btn game-btn"
+          onclick="location.href='roulette.html'"
+        >
+          <img src="static/img/roulette.jpg" alt="" class="game-btn-bg" />
+          <span>Roulette</span>
+        </div>
+
+        <div
+          class="col-12 col-md-6 btn game-btn"
+          onclick="location.href='black-jack.html'"
+        >
+          <img src="static/img/blackjack.jpg" alt="" class="game-btn-bg" />
+          <span>Blackjack</span>
+        </div>
+        <div
+          class="col-12 col-md-6 btn game-btn"
+          onclick="location.href='fish.html'"
+        >
+          <img src="static/img/go-fish.jpg" alt="" class="game-btn-bg" />
+          <span>Go Fish!</span>
+        </div>
       </div>
-      <div class="col-12 col-md-6 btn  game-btn " onclick="location.href='bomb-works2.html'">
-        <img src="static/img/plane.jpg" alt="" class="game-btn-bg">
-        <span>Bomb</span>      
-      </div>
-
-      <div class="col-12 col-md-6 btn  game-btn " onclick="location.href='map_game.html'">
-        <img src="static/img/map-game.jpg" alt="" class="game-btn-bg">
-        <span>Countries</span>      
-      </div>
-      
-      <div class="col-12 col-md-6 btn game-btn  " onclick="location.href='roulette.html'">
-        <img src="static/img/roulette.jpg" alt="" class="game-btn-bg">
-        <span>Roulette</span>
-      </div>
-
-      <div class="col-12 col-md-6 btn game-btn" onclick="location.href='black-jack.html'">
-        <img src="static/img/blackjack.jpg" alt="" class="game-btn-bg">
-        <span>Blackjack</span>
-      </div>
-      
-      
-      <div class="col-12 col-md-6 btn game-btn" onclick="location.href='fish.html'">
-        <img src="static/img/go-fish.jpg" alt="" class="game-btn-bg">
-        <span>Go Fish!</span>
-      </div>
-
     </div>
-  </div>
-
-</body>
+  </body>
 </html>
