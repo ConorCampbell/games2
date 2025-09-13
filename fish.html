@@ -20,15 +20,15 @@
             color: white;
             display: flex;
             justify-content: center;
-            align-items: center;
+            /* align-items: center; */
             min-height: 100vh;
             text-align: center;
         }
 
         .game-container {
             background-color: #1a2a43;
-            padding: 2rem;
-            border-radius: 1.5rem;
+            padding: 1rem;
+            border-radius: 1rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
@@ -49,6 +49,7 @@
             cursor: pointer;
             transition: transform 0.6s ease;
             transform-style: preserve-3d;
+            margin: auto;
         }
         
         /* Animation on hover for unflipped cards */
@@ -96,11 +97,11 @@
         .info-bar {
             background-color: #2b3e5c;
             border-radius: 1rem;
-            padding: 1rem;
-            margin-top: 1rem;
+            /* padding: 1rem;
+            margin-top: 1rem; */
             display: flex;
             justify-content: space-around;
-            align-items: center;
+            /* align-items: center; */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
@@ -149,16 +150,16 @@
             .bi {
                 font-size: 2rem;
             }
-            .info-bar {
+            /* .info-bar {
                 flex-direction: column;
                 gap: 0.5rem;
-            }
+            } */
         }
     </style>
 </head>
 <body>
     <div class="container game-container">
-        <h1 class="mb-4">Go Fish Memory Game</h1>
+        <h1 class="mb-2">Go Fish Memory Game</h1>
         <div class="row info-bar">
             <div class="col-6 col-md-4 info-item">
                 <i class="bi bi-clock-fill"></i>
@@ -176,6 +177,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+
             const cardGrid = document.getElementById('card-grid');
             const timerDisplay = document.getElementById('timer');
             const pairsFoundDisplay = document.getElementById('pairs-found');
@@ -199,6 +201,20 @@
             let lockBoard = false;
             let timer = 0;
             let timerInterval;
+
+            function resetGame() {
+                stopTimer();
+                timer = 0;
+                matchedPairs = 0;
+                flippedCards = [];
+                lockBoard = false;
+                timerDisplay.textContent = '0s';
+                pairsFoundDisplay.textContent = '0/8';
+                gameStatus.textContent = '';
+                restartButton.style.display = 'none';
+                createBoard();
+                startTimer();
+            }
 
             function shuffle(array) {
                 for (let i = array.length - 1; i > 0; i--) {
@@ -281,7 +297,7 @@
                     // Check for win condition
                     if (matchedPairs === 8) {
                         stopTimer();
-                        gameStatus.textContent = `You found all the pairs in ${timer} seconds!`;
+                        gameStatus.textContent = `Completed: ${timer} seconds!`;
                         restartButton.style.display = 'inline-block';
                     }
                 } else {
@@ -295,25 +311,14 @@
                 lockBoard = false;
             }
 
-            function resetGame() {
-                stopTimer();
-                timer = 0;
-                matchedPairs = 0;
-                flippedCards = [];
-                lockBoard = false;
-                timerDisplay.textContent = '0s';
-                pairsFoundDisplay.textContent = '0/8';
-                gameStatus.textContent = '';
-                restartButton.style.display = 'none';
-                createBoard();
-                startTimer();
-            }
 
             restartButton.addEventListener('click', resetGame);
             
             // Initial game setup
             createBoard();
+            
             startTimer();
+
         });
     </script>
     <!-- Bootstrap 5 JS (optional, for some components) -->
