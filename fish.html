@@ -158,22 +158,35 @@
     </style>
 </head>
 <body>
+
     <div class="container game-container">
-        <h1 class="mb-2">Go Fish Memory Game</h1>
-        <div class="row info-bar">
-            <div class="col-6 col-md-4 info-item">
-                <i class="bi bi-clock-fill"></i>
-                <span id="timer">0s</span>
-            </div>
-            <div class="col-6 col-md-4 info-item">
-                <i class="bi bi-hearts"></i>
-                <span id="pairs-found">0/8</span>
-            </div>
-        </div>
-        <div id="card-grid" class="card-grid"></div>
-        <p id="game-status"></p>
-        <button id="restart-button" class="btn btn-restart" style="display: none;">Play Again</button>
+    <h1 class="mb-2">Go Fish Memory Game</h1>
+
+    <!-- Level selection -->
+    <div id="level-select" class="mb-3">
+        <label for="level" class="form-label">Choose Level:</label>
+        <select id="level" class="form-select w-auto d-inline-block">
+            <option value="1">Level 1 (16 cards)</option>
+            <option value="2">Level 2 (20 cards)</option>
+            <option value="3">Level 3 (24 cards)</option>
+        </select>
+        <button id="start-button" class="btn btn-primary ms-2">Start</button>
     </div>
+
+    <div class="row info-bar">
+        <div class="col-6 col-md-4 info-item">
+            <i class="bi bi-clock-fill"></i>
+            <span id="timer">0s</span>
+        </div>
+        <div class="col-6 col-md-4 info-item">
+            <i class="bi bi-hearts"></i>
+            <span id="pairs-found">0/0</span>
+        </div>
+    </div>
+    <div id="card-grid" class="card-grid"></div>
+    <p id="game-status"></p>
+    <button id="restart-button" class="btn btn-restart" style="display: none;">Play Again</button>
+</div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -185,139 +198,65 @@
             const restartButton = document.getElementById('restart-button');
 
             const cardIcons = [
-                { name: 'bi-gem', color: 'text-info' },
-                { name: 'bi-flower1', color: 'text-success' },
-                { name: 'bi-star-fill', color: 'text-warning' },
-                { name: 'bi-suit-heart-fill', color: 'text-danger' },
-                { name: 'bi-lightning-fill', color: 'text-primary' },
-                { name: 'bi-moon-stars-fill', color: 'text-secondary' },
-                { name: 'bi-bell-fill', color: 'text-dark' },
-                { name: 'bi-trophy-fill', color: 'text-muted' }
-            ];
+    { name: 'bi-gem', color: '#00bcd4' },
+    { name: 'bi-flower1', color: '#4caf50' },
+    { name: 'bi-star-fill', color: '#ff9800' },
+    { name: 'bi-suit-heart-fill', color: '#f44336' },
+    { name: 'bi-lightning-fill', color: '#2196f3' },
+    { name: 'bi-moon-stars-fill', color: '#9c27b0' },
+    { name: 'bi-bell-fill', color: '#795548' },
+    { name: 'bi-trophy-fill', color: '#607d8b' },
+    { name: 'bi-umbrella-fill', color: '#e91e63' },
+    { name: 'bi-camera-fill', color: '#3f51b5' },
+    { name: 'bi-music-note-beamed', color: '#009688' },
+    { name: 'bi-cup-hot-fill', color: '#ff5722' }
+];
 
-            let cards = [];
-            let flippedCards = [];
-            let matchedPairs = 0;
-            let lockBoard = false;
-            let timer = 0;
-            let timerInterval;
+let totalPairs = 8; // default level 1
 
-            function resetGame() {
-                stopTimer();
-                timer = 0;
-                matchedPairs = 0;
-                flippedCards = [];
-                lockBoard = false;
-                timerDisplay.textContent = '0s';
-                pairsFoundDisplay.textContent = '0/8';
-                gameStatus.textContent = '';
-                restartButton.style.display = 'none';
-                createBoard();
-                startTimer();
-            }
+function createBoard() {
+    // Pick only as many icons as needed
+    const selectedIcons = cardIcons.slice(0, totalPairs);
+    cards = [...selectedIcons, ...selectedIcons];
+    shuffle(cards);
 
-            function shuffle(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
-            }
+    cardGrid.innerHTML = '';
 
-            function createBoard() {
-                // Duplicate and shuffle the cards
-                cards = [...cardIcons, ...cardIcons];
-                shuffle(cards);
-                
-                // Clear the grid
-                cardGrid.innerHTML = '';
-                
-                cards.forEach((card, index) => {
-                    const cardContainer = document.createElement('div');
-                    cardContainer.classList.add('card-container');
-                    cardContainer.dataset.index = index;
-                    cardContainer.dataset.name = card.name;
-                    
-                    const cardFront = document.createElement('div');
-                    cardFront.classList.add('card-face', 'card-front');
-                    cardFront.innerHTML = `<i class="bi ${card.name} ${card.color}"></i>`;
-                    
-                    const cardBack = document.createElement('div');
-                    cardBack.classList.add('card-face', 'card-back');
-                    cardBack.innerHTML = `<i class="bi bi-question-circle-fill fs-1 text-light"></i>`;
-                    
-                    cardContainer.appendChild(cardFront);
-                    cardContainer.appendChild(cardBack);
-                    
-                    cardGrid.appendChild(cardContainer);
-                    
-                    cardContainer.addEventListener('click', flipCard);
-                });
-            }
+    // Adjust grid columns based on card count
+    const columns = totalPairs > 10 ? 6 : 4;
+    cardGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
 
-            function startTimer() {
-                timerInterval = setInterval(() => {
-                    timer++;
-                    timerDisplay.textContent = `${timer}s`;
-                }, 1000);
-            }
+    cards.forEach((card, index) => {
+        const cardContainer = document.createElement('div');
+        cardContainer.classList.add('card-container');
+        cardContainer.dataset.index = index;
+        cardContainer.dataset.name = card.name;
 
-            function stopTimer() {
-                clearInterval(timerInterval);
-            }
-            
-            function flipCard(event) {
-                const card = event.currentTarget;
-                
-                // Ignore clicks if the board is locked or card is already flipped/matched
-                if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) {
-                    return;
-                }
-                
-                card.classList.add('flipped');
-                flippedCards.push(card);
+        const cardFront = document.createElement('div');
+        cardFront.classList.add('card-face', 'card-front');
+        cardFront.innerHTML = `<i class="bi ${card.name}" style="color:${card.color}"></i>`;
 
-                if (flippedCards.length === 2) {
-                    lockBoard = true;
-                    setTimeout(checkForMatch, 1000);
-                }
-            }
+        const cardBack = document.createElement('div');
+        cardBack.classList.add('card-face', 'card-back');
+        cardBack.innerHTML = `<i class="bi bi-question-circle-fill fs-1 text-light"></i>`;
 
-            function checkForMatch() {
-                const [firstCard, secondCard] = flippedCards;
-                const isMatch = firstCard.dataset.name === secondCard.dataset.name;
+        cardContainer.appendChild(cardFront);
+        cardContainer.appendChild(cardBack);
+        cardGrid.appendChild(cardContainer);
 
-                if (isMatch) {
-                    // It's a match!
-                    matchedPairs++;
-                    firstCard.classList.add('matched');
-                    secondCard.classList.add('matched');
-                    pairsFoundDisplay.textContent = `${matchedPairs}/8`;
-                    
-                    // Check for win condition
-                    if (matchedPairs === 8) {
-                        stopTimer();
-                        gameStatus.textContent = `Completed: ${timer} seconds!`;
-                        restartButton.style.display = 'inline-block';
-                    }
-                } else {
-                    // No match, flip them back
-                    firstCard.classList.remove('flipped');
-                    secondCard.classList.remove('flipped');
-                }
-                
-                // Reset for next turn
-                flippedCards = [];
-                lockBoard = false;
-            }
+        cardContainer.addEventListener('click', flipCard);
+    });
 
+    pairsFoundDisplay.textContent = `0/${totalPairs}`;
+}
 
-            restartButton.addEventListener('click', resetGame);
-            
-            // Initial game setup
-            createBoard();
-            
-            startTimer();
+document.getElementById('start-button').addEventListener('click', () => {
+    const level = parseInt(document.getElementById('level').value, 10);
+    if (level === 1) totalPairs = 8;
+    if (level === 2) totalPairs = 10;
+    if (level === 3) totalPairs = 12;
+    resetGame();
+});
 
         });
     </script>
