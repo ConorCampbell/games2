@@ -13,6 +13,18 @@
             --card-size: 100px;
             --card-border-radius: 1rem;
         }
+        
+        /*for the confetti*/
+        particle {
+            position: fixed;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            z-index: 5000;
+            pointer-events: none;
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
 
         body {
             background-color: #0b1527;
@@ -27,6 +39,7 @@
 
         .game-container {
             background-color: #1a2a43;
+            position: relative;
             padding: 1rem;
             border-radius: 1rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -85,7 +98,14 @@
             transform: rotateY(180deg);
         }
 
+        .card-container.matched{
+          
+        }
+
         .card-container.matched .card-face {
+          border: greenyellow;
+          transform: scale(1.2);
+          transition: opacity 2.75s;
             opacity: 0;
         }
         
@@ -162,16 +182,24 @@
     <div class="container game-container">
   <h1 class="mb-2">Go Fish Memory Game</h1>
 
-  <!-- Level selector -->
-  <div class="mb-3">
-    <label for="level-select" class="form-label fw-bold">Choose Level:</label>
-    <select id="level-select" class="form-select w-auto mx-auto">
-      <option value="8" selected>Level 1 (16 Cards)</option>
-      <option value="10">Level 2 (20 Cards)</option>
-      <option value="12">Level 3 (24 Cards)</option>
-    </select>
+  <!-- Level Selector Modal -->
+  <div class="modal fade" id="levelModal" tabindex="-1" aria-labelledby="levelModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" id="levelModalLabel">Choose Level</h5>
+        </div>
+        <div class="modal-body">
+          <div class="d-flex flex-column gap-3">
+            <button type="button" class="btn btn-primary btn-lg level-btn" data-value="8">Level 1 (16 Cards)</button>
+            <button type="button" class="btn btn-success btn-lg level-btn" data-value="10">Level 2 (20 Cards)</button>
+            <button type="button" class="btn btn-warning btn-lg level-btn" data-value="12">Level 3 (24 Cards)</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-
+  
   <div class="row info-bar">
     <div class="col-6 col-md-4 info-item">
       <i class="bi bi-clock-fill"></i>
@@ -188,12 +216,21 @@
   <button id="restart-button" class="btn btn-restart" style="display:none;">Play Again</button>
 </div>
 
-    
-    <script>
+<script>
+  let is_sound_allowed = true;
+</script>  
+<script src="static/js/fireworks.js"></script>
+<script src="static/js/keyboard.js"></script>
 
-        document.addEventListener('DOMContentLoaded', () => {
+
+<script>
+
+
+document.addEventListener('DOMContentLoaded', () => {
+
   const cardGrid = document.getElementById('card-grid');
-  const levelSelect = document.getElementById('level-select');
+  // const levelSelect = document.getElementById('level-select');
+
   const timerDisplay = document.getElementById('timer');
   const pairsFoundDisplay = document.getElementById('pairs-found');
   const gameStatus = document.getElementById('game-status');
@@ -221,7 +258,40 @@
   let lockBoard = false;
   let timer = 0;
   let timerInterval;
-  let pairsToMatch = parseInt(levelSelect.value);
+  let pairsToMatch
+
+    const levelModal = new bootstrap.Modal(document.getElementById('levelModal'));
+    
+    let selectedLevel = 8;
+    let gameEnded = false;
+
+    function showLevelModal() {
+      document.getElementById('levelModal').querySelectorAll('.level-btn').forEach(btn => btn.disabled = false);
+      levelModal.show();
+    }
+
+    function hideLevelModal() {
+      levelModal.hide();
+    }
+
+    
+    function setLevel(level) {
+      selectedLevel = parseInt(level);
+      pairsToMatch = selectedLevel;
+      pairsFoundDisplay.textContent = `0/${pairsToMatch}`;
+      createBoard();
+      startTimer();
+      hideLevelModal();
+      gameEnded = false;
+    }
+
+    document.querySelectorAll('.level-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.level-btn').forEach(b => b.disabled = true);
+        setLevel(this.dataset.value);
+      });
+    });
+
 
   function resetGame() {
     stopTimer();
@@ -229,11 +299,16 @@
     matchedPairs = 0;
     flippedCards = [];
     lockBoard = false;
-    pairsToMatch = parseInt(levelSelect.value);
+    // pairsToMatch = parseInt(levelSelect.value);
     timerDisplay.textContent = '0s';
     pairsFoundDisplay.textContent = `0/${pairsToMatch}`;
     gameStatus.textContent = '';
     restartButton.style.display = 'none';
+
+    showLevelModal();
+      
+    gameEnded = false;
+
     createBoard();
     startTimer();
   }
@@ -281,6 +356,23 @@
     });
   }
 
+
+    restartButton.addEventListener('click', () => {
+      showLevelModal();
+      restartButton.style.display = 'none';
+      gameStatus.textContent = '';
+      stopTimer();
+      timerDisplay.textContent = '0s';
+      matchedPairs = 0;
+      flippedCards = [];
+      lockBoard = false;
+      timer = 0;
+      gameEnded = false;
+    });
+
+  // Show modal on page load
+  showLevelModal();
+
   function adjustGridSize(pairs) {
 
 
@@ -298,16 +390,16 @@
       columns = 6
     }
     
-    if (window.innerWidth < 576) {
+    if (window.innerWidth < (window.innerHeight)) {
       columns = 4;
     }
 
     cardGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
-
     
     // Resize cards if needed (keep them fitting screen)
     const availableWidth = window.innerWidth * 0.85;
-    const cardSize = Math.min(Math.floor(availableWidth / columns) - 10, 120);
+    const cardSize = Math.min(Math.floor(availableWidth / columns) - 5, 100);
+
     document.documentElement.style.setProperty('--card-size', `${cardSize}px`);
 
   }
@@ -342,14 +434,29 @@
 
     if (isMatch) {
       matchedPairs++;
+
+      console.log("match");
+      popConfetti(firstCard);
+      popConfetti(secondCard);
+
       firstCard.classList.add('matched');
       secondCard.classList.add('matched');
+
       pairsFoundDisplay.textContent = `${matchedPairs}/${pairsToMatch}`;
+  
       if (matchedPairs === pairsToMatch) {
         stopTimer();
         gameStatus.textContent = `Completed in ${timer} seconds!`;
         restartButton.style.display = 'inline-block';
+      
+        gameEnded = true;
+        setTimeout(() => {
+          restartButton.style.display = 'inline-block';
+        }, 500);
+      
+
       }
+
     } else {
       firstCard.classList.remove('flipped');
       secondCard.classList.remove('flipped');
@@ -358,15 +465,17 @@
     lockBoard = false;
   }
 
-  levelSelect.addEventListener('change', resetGame);
+  // levelSelect.addEventListener('change', resetGame);
   restartButton.addEventListener('click', resetGame);
 
   // Initial setup
-  createBoard();
-  startTimer();
+  
+
 });
 
-          </script>
+</script>
+
+
     <!-- Bootstrap 5 JS (optional, for some components) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
