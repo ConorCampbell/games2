@@ -34,7 +34,7 @@
 
         .card-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            /* grid-template-columns: repeat(4, 1fr); */
             gap: 1rem;
             justify-content: center;
             align-items: center;
@@ -246,6 +246,11 @@
     return array;
   }
 
+
+  // we need to call adjustGridSize when screen resizes
+  window.addEventListener('resize', () => {
+    adjustGridSize(pairsToMatch);
+  });
   function createBoard() {
     // Choose correct number of icons for level
     const selectedIcons = shuffle([...cardIcons]).slice(0, pairsToMatch);
@@ -277,13 +282,33 @@
   }
 
   function adjustGridSize(pairs) {
-    const columns = Math.ceil(Math.sqrt(pairs * 2));
+
+
+    let columns = Math.ceil(Math.sqrt(pairs * 2));
+    
+    console.log(pairsToMatch, "cards")
+
+    // this needs to be screen size specific
+    // on mobile we should always keep four cols
+
+    if (pairs==8){
+      columns = 4
+    }
+    if (pairs==10){
+      columns = 5
+    }
+    if (pairs==12){
+      columns = 6
+    }
+
     cardGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
 
+    
     // Resize cards if needed (keep them fitting screen)
     const availableWidth = window.innerWidth * 0.8;
     const cardSize = Math.min(Math.floor(availableWidth / columns) - 10, 120);
     document.documentElement.style.setProperty('--card-size', `${cardSize}px`);
+
   }
 
   function startTimer() {
