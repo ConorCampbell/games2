@@ -288,9 +288,6 @@
     
     console.log(pairsToMatch, "cards")
 
-    // this needs to be screen size specific
-    // on mobile we should always keep four cols
-
     if (pairs==8){
       columns = 4
     }
@@ -299,6 +296,10 @@
     }
     if (pairs==12){
       columns = 6
+    }
+    
+    if (window.innerWidth < 576) {
+      columns = 4;
     }
 
     cardGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
