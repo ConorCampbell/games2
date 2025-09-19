@@ -12,6 +12,7 @@
         :root {
             --card-size: 100px;
             --card-border-radius: 1rem;
+            --card-aspect-ratio:1;
         }
 
         /*for the confetti*/
@@ -57,7 +58,7 @@
           top: 0px;
           left: 0;
           width: 100%;
-          height: calc(120px);
+          height: calc(100px);
           pointer-events: none;
           z-index: 0;
           background: linear-gradient(
@@ -67,7 +68,7 @@
             rgba(11, 21, 39, 0) 100%
           );
           backdrop-filter: blur(8px);
-          border-radius: 1rem;
+          /* border-radius: 1rem; */
         }
         .game-container > * {
           position: relative;
@@ -87,9 +88,9 @@
         .card-container {
             position: relative;
             width: var(--card-size);
-            height: var(--card-size);
+            height: calc(var(--card-size) * var(--card-aspect-ratio));
             cursor: pointer;
-            transition: transform 0.6s ease;
+            transition: all 0.6s ease;
             transform-style: preserve-3d;
             margin: auto;
         }
@@ -114,8 +115,7 @@
 
         .card-container.shake {           
           animation: shake .4s cubic-bezier(.36,.07,.19,.97) both; 
-
-          }
+        }
 
           @keyframes shake {
             10%, 90% { transform: translateX(-2px); }
@@ -140,12 +140,11 @@
             transform: rotateY(180deg);
         }
 
-
         .card-container.matched .card-face {
           border: greenyellow;
           transform: scale(1.2);
           transition: opacity 2.75s;
-            opacity: 0;
+          opacity: 0;
         }
         
         .bi {
@@ -170,6 +169,20 @@
             gap: 0.5rem;
             font-weight: bold;
         }
+
+        #game-status-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          position: absolute;
+          width: 100%;
+          z-index: 10;
+        }
+        
 
         #game-status {
             margin-top: 1rem;
@@ -222,7 +235,7 @@
 </head>
 <body>
 
-    <div class="container game-container">
+<div id = "game-board" class="container game-container">
   <h1 class="mb-2">Go Fish Memory Game</h1>
 
   <!-- Level Selector Modal -->
@@ -256,8 +269,10 @@
 
   <div id="card-grid" class="card-grid pond-background"></div>
 
+  <div id="game-status-container">
   <p id="game-status"></p>
   <button id="restart-button" class="btn btn-restart" style="display:none;">Play Again</button>
+  </div>
 </div>
 
 
@@ -301,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let timer = 0;
   let timerInterval;
   let pairsToMatch
+  let bad_guess = 0;
 
     const levelModal = new bootstrap.Modal(document.getElementById('levelModal'));
     
@@ -341,18 +357,18 @@ document.addEventListener('DOMContentLoaded', () => {
     stopTimer();
     timer = 0;
     matchedPairs = 0;
+    bad_guess = 0;
     flippedCards = [];
     lockBoard = false;
+    gameEnded = false;
+
     // pairsToMatch = parseInt(levelSelect.value);
     timerDisplay.textContent = '0s';
     pairsFoundDisplay.textContent = `0/${pairsToMatch}`;
     gameStatus.textContent = '';
     restartButton.style.display = 'none';
 
-    showLevelModal();
-      
-    gameEnded = false;
-
+    showLevelModal();    
     createBoard();
     startTimer();
   }
@@ -383,6 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
       cardContainer.classList.add('card-container');
       cardContainer.dataset.index = index;
       cardContainer.dataset.name = card.name;
+      cardContainer.dataset.clicked = 0;
 
       const cardFront = document.createElement('div');
       cardFront.classList.add('card-face', 'card-front');
@@ -421,23 +438,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Determine number of columns based on pairs and screen size
     let columns;    
-    if (window.innerWidth < window.innerHeight) {
-      columns = 4;  // Use 4 columns for portrait orientation on small screens
-    }else{
-      switch (pairs) {
+   
+    switch (pairs) {
         case 8: columns = 4; break;
         case 10: columns = 5; break;
         case 12: columns = 6; break;
         default: columns = Math.ceil(Math.sqrt(pairs * 2));
       }
-    }    
 
-    cardGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;    
+    if (window.innerWidth < window.innerHeight) {
+
+      remmaining_height = window.innerHeight -120;
+      columns = 4;  // Use 4 columns for portrait orientation on small screens
+      remmaining_height = (remmaining_height  / (pairs*2/columns)) 
+
+      ratio = remmaining_height /  Math.floor( window.innerWidth / columns)
+      document.documentElement.style.setProperty('--card-aspect-ratio', ratio);
+
+    }
+        
     // Resize cards if needed (keep them fitting screen)
-    const availableWidth = window.innerWidth * 0.85;
-    const cardSize = Math.min(Math.floor(availableWidth / columns) - 5, 100);
+    
+
+    const availableWidth = document.getElementById("game-board").offsetWidth;
+    const cardSize = Math.min(Math.floor(availableWidth / columns) - 5, 150);
 
     document.documentElement.style.setProperty('--card-size', `${cardSize}px`);
+    
+    
+    cardGrid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;    
+    // set the --card-aspect-ratio 1 is square, .75 is tall
+    // function of n rows and screen sizes
 
   }
 
@@ -469,12 +500,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const [firstCard, secondCard] = flippedCards;
     const isMatch = firstCard.dataset.name === secondCard.dataset.name;
 
-    if (isMatch) {
-      matchedPairs++;
+    // increment the clicked data attribute for each card
+    firstCard.dataset.clicked = parseInt(firstCard.dataset.clicked) + 1;
+    secondCard.dataset.clicked = parseInt(secondCard.dataset.clicked) + 1;
 
-      console.log("match");
+    if (isMatch) {
+
+      matchedPairs++;
+  
       popConfetti(firstCard);
-      popConfetti(secondCard);
+      // popConfetti(secondCard);
 
       firstCard.classList.add('matched');
       secondCard.classList.add('matched');
@@ -482,8 +517,9 @@ document.addEventListener('DOMContentLoaded', () => {
       pairsFoundDisplay.textContent = `${matchedPairs}/${pairsToMatch}`;
   
       if (matchedPairs === pairsToMatch) {
+
         stopTimer();
-        gameStatus.textContent = `Completed in ${timer} seconds!`;
+        gameStatus.textContent = `Completed in ${timer} seconds! Bad Matches ${bad_guess}!!`;
         restartButton.style.display = 'inline-block';
       
         gameEnded = true;
@@ -499,6 +535,10 @@ document.addEventListener('DOMContentLoaded', () => {
       firstCard.classList.add('shake');
       secondCard.classList.add('shake');
 
+      if (parseInt(firstCard.dataset.clicked) > 1 || parseInt(secondCard.dataset.clicked) > 1) {        
+        bad_guess++;
+      }
+      
       // document.documentElement.style.setProperty('--shake-time', `${shakeTime}ms`);
 
       setTimeout(() => {
