@@ -170,7 +170,7 @@
             font-weight: bold;
         }
 #game-status-container {
-    display: flex;
+    display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -294,7 +294,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const timerDisplay = document.getElementById('timer');
   const pairsFoundDisplay = document.getElementById('pairs-found');
   const gameStatus = document.getElementById('game-status');
-  const restartButton = document.getElementById('restart-button');
+  const gameStatusContainer = document.getElementById('game-status-container');
+  const restartButton = document.getElementById("restart-button")
 
   // Expanded icon set with custom colors
   const cardIcons = [
@@ -369,8 +370,8 @@ document.addEventListener('DOMContentLoaded', () => {
     timerDisplay.textContent = '0s';
     pairsFoundDisplay.textContent = `0/${pairsToMatch}`;
     gameStatus.textContent = '';
-    restartButton.style.display = 'none';
-
+    gameStatusContainer.style.display = 'none';
+    
     showLevelModal();    
     createBoard();
     startTimer();
@@ -521,15 +522,13 @@ document.addEventListener('DOMContentLoaded', () => {
   
       if (matchedPairs === pairsToMatch) {
 
-        stopTimer();
-        gameStatus.textContent = `Completed in ${timer} seconds! Bad Matches ${bad_guess}!!`;
-        restartButton.style.display = 'inline-block';
-      
+        stopTimer();                      
         gameEnded = true;
         setTimeout(() => {
+          gameStatus.textContent = `Completed in ${timer} seconds! Bad Matches ${bad_guess}!!`;
+          gameStatusContainer.style.display = 'flex';
           restartButton.style.display = 'inline-block';
-        }, 500);
-      
+        }, 500);      
 
       }
 
