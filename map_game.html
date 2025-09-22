@@ -2052,7 +2052,7 @@ async function searchEntities(searchTerm) {
     throw new Error("searchTerm must be a non-empty string.");
   }
 
-  const url = `https://fatfinger.pythonanywhere.com/entity/search?format=json&s=${encodeURIComponent(searchTerm)}`;
+  const url = `https://fatfinger.pythonanywhere.com/entity/search/?format=json&s=${encodeURIComponent(searchTerm)}`;
 
   try {
     const response = await fetch(url, {
