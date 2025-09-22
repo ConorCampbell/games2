@@ -81,80 +81,50 @@
         0%,100%{filter:brightness(1)}
         50%{filter:brightness(2.5)}
     }
-
-    /*
- * This first rule is important! It resets Leaflet's default tooltip
- * styles so our custom card design can take over.
- */
-.leaflet-tooltip.marker-tooltip {
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 0;
+.leaflet-popup-content {
+    margin: 0 !important; /* Remove default padding */
 }
 
-/* The main card container */
-.tooltip-card {
-    width: 280px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    overflow: hidden; /* Ensures the image corners are rounded */
-    color: #333;
-}
-
-/* Image styling */
-.tooltip-image {
-    width: 100%;
-    height: 140px;
-    object-fit: cover; /* Ensures the image covers the area without distortion */
-    display: block;
-}
-
-/* Padding for the text content */
-.tooltip-content {
-    padding: 16px;
-}
-
-/* Card title */
-.tooltip-content h3 {
-    margin: 0 0 8px 0;
-    font-size: 1.1em;
-    font-weight: 600;
-}
-
-/* Card description */
-.tooltip-content p {
-    max-height: 200px;
-    margin: 0;
-    font-size: 0.9em;
-    line-height: 1.5;
-
-    color: #666;
-     /* Add this line to wrap long text */
-    overflow-wrap: break-word;
-    overflow-y: scroll;
-    text-wrap: auto;    
-}
-
-/* Container for metadata badges */
-.tooltip-meta {
-    margin-top: 12px;
+.popup-card {
     display: flex;
-    gap: 8px; /* Space between badges */
+    flex-direction: column;
+    max-width: 280px;
+    font-family: sans-serif;
 }
 
-/* Styling for the category/type badges */
-.tooltip-badge {
-    display: inline-block;
-    background-color: #f0f0f0;
-    color: #555;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 0.75em;
-    font-weight: 500;
+.popup-image {
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
 }
+
+.popup-content h3 {
+    margin: 0 0 0.25rem;
+    font-size: 1.1rem;
+}
+
+
+.popup-card p{
+    color: rbga(0,0,0,0.8);
+    margin: 0.4rem ;
+    font-size: 0.9rem;
+    max-height: 250px;
+    overflow-y: scroll;
+}
+
+.popup-meta {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.popup-badge {
+    background: #eee;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
 
 </style>
 </head>
@@ -2172,13 +2142,12 @@ inputEl.addEventListener('keydown', e => {
     inputEl.value = '';
     
 });
-
-async function addTooltip(marker) {
+async function addPopup(marker) {
     // Fetch entity data from the API
     const results = await searchEntities(marker.countryName);
     console.log(results);
 
-    let tooltipContent = '';
+    let popupContent = '';
 
     // Check if we got any results from the API
     if (results && results.length > 0) {
@@ -2186,43 +2155,36 @@ async function addTooltip(marker) {
         const entity = results[0];
 
         // Build the HTML for our elegant card
-        tooltipContent = `
-            <div class="tooltip-card">
-                ${entity.picture ? `<img src="https://fatfinger.pythonanywhere.com/${entity.picture}" alt="${entity.title || ''}" class="tooltip-image">` : ''}
-                <div class="tooltip-content">
+        popupContent = `
+            <div class="popup-card">
+                ${entity.picture ? `<img src="https://fatfinger.pythonanywhere.com/${entity.picture}" alt="${entity.title || ''}" class="popup-image">` : ''}
+                <div class="popup-content">
                     <h3>${entity.title || marker.countryName}</h3>
                     <p>${entity.description || 'No description available.'}</p>
-                    <div class="tooltip-meta">
-                        ${entity.category ? `<span class="tooltip-badge">${entity.category}</span>` : ''}
-                        ${entity.type ? `<span class="tooltip-badge">${entity.type}</span>` : ''}
+                    <div class="popup-meta">
+                        ${entity.category ? `<span class="popup-badge">${entity.category}</span>` : ''}
+                        ${entity.type ? `<span class="popup-badge">${entity.type}</span>` : ''}
                     </div>
                 </div>
             </div>
         `;
     } else {
-        // Fallback to the original, simpler tooltip if no data is found
-        tooltipContent = `<b>${marker.countryName}</b><br>Capital: ${marker.capital || 'N/A'}`;
+        // Fallback if no data is found
+        popupContent = `<b>${marker.countryName}</b><br>Capital: ${marker.capital || 'N/A'}`;
     }
 
-    // Bind the generated HTML content to the marker's tooltip
-    marker.bindTooltip(tooltipContent, {
-        direction: 'top',
-        // permanent: true,
-        interactive: true,
-        closeOnClick : true,
-        className: 'marker-tooltip', // This class is key for CSS targeting
-        opacity: 0.9,
-        offset: [0, -10] // Adjust offset to better position the card
+    // Bind popup content to the marker
+    marker.bindPopup(popupContent, {
+        maxWidth: 300,         // Limit width so it doesn't get too wide
+        className: 'marker-popup', // Custom class for styling
+        autoPan: true,         // Auto-pan the map so popup is fully visible
+        closeButton: true,     // Show close button
     });
 
-    //  // After the tooltip is opened, attach the event listener to the button
-    // marker.on('tooltipopen', function() {
-    //     document.getElementById('closeTooltip').addEventListener('click', function() {
-    //         marker.closeTooltip();
-    //     });
-    // });
-
+    // Optionally open the popup immediately (optional)
+    marker.openPopup();
 }
+
 
 
 async function searchEntities(searchTerm) {
@@ -2264,7 +2226,7 @@ function animateWordToMarker(name) {
 
     const marker = markers[name];
 
-    addTooltip(marker);
+    addPopup(marker);
 
     console.log('Animating word to marker:', name, marker);
 
