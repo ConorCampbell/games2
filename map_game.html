@@ -81,6 +81,81 @@
         0%,100%{filter:brightness(1)}
         50%{filter:brightness(2.5)}
     }
+
+    /*
+ * This first rule is important! It resets Leaflet's default tooltip
+ * styles so our custom card design can take over.
+ */
+.leaflet-tooltip.marker-tooltip {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+/* The main card container */
+.tooltip-card {
+    width: 280px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden; /* Ensures the image corners are rounded */
+    color: #333;
+}
+
+/* Image styling */
+.tooltip-image {
+    width: 100%;
+    height: 140px;
+    object-fit: cover; /* Ensures the image covers the area without distortion */
+    display: block;
+}
+
+/* Padding for the text content */
+.tooltip-content {
+    padding: 16px;
+}
+
+/* Card title */
+.tooltip-content h3 {
+    margin: 0 0 8px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+/* Card description */
+.tooltip-content p {
+    max-height: 200px;
+    margin: 0;
+    font-size: 0.9em;
+    line-height: 1.5;
+
+    color: #666;
+     /* Add this line to wrap long text */
+    overflow-wrap: break-word;
+    overflow-y: scroll;
+    text-wrap: auto;    
+}
+
+/* Container for metadata badges */
+.tooltip-meta {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px; /* Space between badges */
+}
+
+/* Styling for the category/type badges */
+.tooltip-badge {
+    display: inline-block;
+    background-color: #f0f0f0;
+    color: #555;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
 </style>
 </head>
 
@@ -2113,7 +2188,7 @@ async function addTooltip(marker) {
         // Build the HTML for our elegant card
         tooltipContent = `
             <div class="tooltip-card">
-                ${entity.image ? `<img src="${entity.image}" alt="${entity.title || ''}" class="tooltip-image">` : ''}
+                ${entity.picture ? `<img src="https://fatfinger.pythonanywhere.com/${entity.picture}" alt="${entity.title || ''}" class="tooltip-image">` : ''}
                 <div class="tooltip-content">
                     <h3>${entity.title || marker.countryName}</h3>
                     <p>${entity.description || 'No description available.'}</p>
@@ -2132,10 +2207,21 @@ async function addTooltip(marker) {
     // Bind the generated HTML content to the marker's tooltip
     marker.bindTooltip(tooltipContent, {
         direction: 'top',
+        // permanent: true,
+        interactive: true,
+        closeOnClick : true,
         className: 'marker-tooltip', // This class is key for CSS targeting
         opacity: 0.9,
         offset: [0, -10] // Adjust offset to better position the card
     });
+
+    //  // After the tooltip is opened, attach the event listener to the button
+    // marker.on('tooltipopen', function() {
+    //     document.getElementById('closeTooltip').addEventListener('click', function() {
+    //         marker.closeTooltip();
+    //     });
+    // });
+
 }
 
 
