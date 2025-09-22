@@ -2047,33 +2047,6 @@ function place_markers(){
 
 };
 
-async function searchEntities(searchTerm) {
-  if (!searchTerm || typeof searchTerm !== "string") {
-    throw new Error("searchTerm must be a non-empty string.");
-  }
-
-  const url = `https://fatfinger.pythonanywhere.com/entity/search/?format=json&s=${encodeURIComponent(searchTerm)}`;
-
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json"
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data; // should be a JSON list
-  } catch (error) {
-    console.error("Error fetching search results:", error);
-    return []; // return empty list on error to avoid breaking the caller
-  }
-}
-
 place_markers()
     
     
@@ -2125,22 +2098,74 @@ inputEl.addEventListener('keydown', e => {
     
 });
 
-
 async function addTooltip(marker) {
-
+    // Fetch entity data from the API
     const results = await searchEntities(marker.countryName);
     console.log(results);
 
-    // now lets add a tooltip to the marker
-    const tooltipContent = `<b>${marker.countryName}</b><br>Capital: ${marker.capital || 'N/A'}<br>Region: ${marker.region || 'N/A'}`;
+    let tooltipContent = '';
 
-    marker.bindTooltip(tooltipContent, {        
+    // Check if we got any results from the API
+    if (results && results.length > 0) {
+        // We only care about the first item
+        const entity = results[0];
+
+        // Build the HTML for our elegant card
+        tooltipContent = `
+            <div class="tooltip-card">
+                ${entity.image ? `<img src="${entity.image}" alt="${entity.title || ''}" class="tooltip-image">` : ''}
+                <div class="tooltip-content">
+                    <h3>${entity.title || marker.countryName}</h3>
+                    <p>${entity.description || 'No description available.'}</p>
+                    <div class="tooltip-meta">
+                        ${entity.category ? `<span class="tooltip-badge">${entity.category}</span>` : ''}
+                        ${entity.type ? `<span class="tooltip-badge">${entity.type}</span>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    } else {
+        // Fallback to the original, simpler tooltip if no data is found
+        tooltipContent = `<b>${marker.countryName}</b><br>Capital: ${marker.capital || 'N/A'}`;
+    }
+
+    // Bind the generated HTML content to the marker's tooltip
+    marker.bindTooltip(tooltipContent, {
         direction: 'top',
-        className: 'marker-tooltip',
-        opacity: 0.8
+        className: 'marker-tooltip', // This class is key for CSS targeting
+        opacity: 0.9,
+        offset: [0, -10] // Adjust offset to better position the card
     });
-    
 }
+
+
+async function searchEntities(searchTerm) {
+  if (!searchTerm || typeof searchTerm !== "string") {
+    throw new Error("searchTerm must be a non-empty string.");
+  }
+
+  const url = `https://fatfinger.pythonanywhere.com/entity/search/?format=json&s=${encodeURIComponent(searchTerm)}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data; // should be a JSON list
+  } catch (error) {
+    console.error("Error fetching search results:", error);
+    return []; // return empty list on error to avoid breaking the caller
+  }
+}
+
 /* ---------- 5. Animations ---------- */
 function animateWordToMarker(name) {
     const word = document.createElement('div');
