@@ -56,11 +56,33 @@
         background: #e0e0e0;
         border-radius: 4px;
         font-size: 1rem;
+        color:whitesmoke;
         cursor: pointer;
         user-select: none;
         transition: background 0.2s ease;
     }
-
+    .popup-image {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 0 24px 8px rgba(0,0,0,0.25);
+        /* Blur effect around edges using mask */
+        -webkit-mask-image: radial-gradient(circle at center, black 70%, transparent 100%);
+        mask-image: radial-gradient(circle at center, black 70%, transparent 100%);
+    }
+    #regionsModal {
+        background-image: url('static/img/map-game.jpg')  ;
+        background-size: cover; /* Scale the image to cover the entire element */
+        background-repeat: no-repeat; /* Prevent the image from repeating */
+        background-position: center center; /* Center the image within the element */
+        height: 100vh; /* If applied to body for full viewport coverage */
+        margin: 0; /* Remove default body margin */
+    }
+    #regionsodal .region {
+        background: lightslategrey;
+    }
     .region:hover {
         background: #d0d0d0;
     }
@@ -213,6 +235,8 @@
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://unpkg.com/leaflet-providers@1.13.0/leaflet-providers.js"></script>
 
 <!-- Fuse.js (fuzzy search) -->
 <script src="https://unpkg.com/fuse.js@6.6.2/dist/fuse.min.js"></script>
@@ -2002,20 +2026,25 @@ countries.forEach(c => {
 
 
 // 1. Blank basemap (no features or labels)
-const blankTile = L.tileLayer('', { attribution: '' });
+// const blankTile = L.tileLayer('', { attribution: '' });
+
 var initialCenter = [20, 0]; // e.g., [40.7128, -74.0060]
 var initialZoom = 3; // e.g., 13
+
+topographyLayer = L.tileLayer.provider('OpenTopoMap');
 
 // 2. Init map
 const map = L.map('map', {
     center: initialCenter,
     zoom: initialZoom,
-    layers: [blankTile]
+    layers: [topographyLayer]
 });
 
 
-// const regionsEl = document.getElementById('regions');
-// const inputEl = document.getElementById('countryInput');
+// L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+//     attribution: 'cc'
+// }).addTo(map);
+
 
 // Build "All regions" button
 const allEl = document.createElement('span');
@@ -2028,7 +2057,7 @@ regionsEl.appendChild(allEl);
 Object.entries(regionCounts).forEach(([region, count]) => {
   const el = document.createElement('span');
   el.className = 'region';
-  el.style.backgroundColor = regionColors[region] || '#ccc';
+  el.style.backgroundColor = regionColors[region] || '#ccc';  
   el.textContent = `${region}: ${count}`;
   regionsEl.appendChild(el);
 
