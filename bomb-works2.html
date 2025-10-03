@@ -119,21 +119,25 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
     <script>
+        var coverModal;
+        var areaModal;
+        
             document.addEventListener('DOMContentLoaded', function() {
                 
-                var coverModal = new bootstrap.Modal(document.getElementById('coverPageModal'), {
+                coverModal = new bootstrap.Modal(document.getElementById('coverPageModal'), {
                     backdrop: 'static',
                     keyboard: true
                 });
+                
+                areaModal = new bootstrap.Modal(document.getElementById('areaSelectionModal'), {
+                        backdrop: 'static',
+                        keyboard: false
+                });
+                
                 coverModal.show();
 
                 document.getElementById('coverPageOkBtn').addEventListener('click', function() {
                     coverModal.hide();
-                    // Show area selection modal after closing cover page
-                    var areaModal = new bootstrap.Modal(document.getElementById('areaSelectionModal'), {
-                        backdrop: 'static',
-                        keyboard: false
-                    });
                     areaModal.show();
                 });
 
@@ -158,12 +162,14 @@
         const finalStartGameButton = document.getElementById('finalStartGameButton');
 
         const gameOverModal = document.getElementById('gameOverModal');
+        
         const gameOverTitle = document.getElementById('gameOverTitle');
         const finalScoreDisplay = document.getElementById('finalScore');
         const proximityResultsDisplay = document.getElementById('proximityResults');
         const getDebriefingButton = document.getElementById('getDebriefingButton');
         const debriefingLoadingSpinner = document.getElementById('debriefingLoading');
         const debriefingOutput = document.getElementById('debriefingOutput');
+        
         const restartGameButton = document.getElementById('restartGameButton');
 
         let animationFrameId;
@@ -171,7 +177,6 @@
 
 
         // --- Sound Effects ---
-
         const bombDropSound = new Audio(`static/sound/bomb-dropping.mp3`);
         bombDropSound.volume = 1; // Adjust volume to not be too loud
 
@@ -234,7 +239,6 @@
         // totalMapLength is no longer used for game end condition, but kept for area description
         let totalMapLength = 0;
         let selectedGameArea = null;
-
 
     // set a difficulty level from 1-5
         let difficulty = 8
