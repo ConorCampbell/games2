@@ -47,26 +47,6 @@
             </div>
         </div>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var coverModal = new bootstrap.Modal(document.getElementById('coverPageModal'), {
-                    backdrop: 'static',
-                    keyboard: true
-                });
-                coverModal.show();
-
-                document.getElementById('coverPageOkBtn').addEventListener('click', function() {
-                    coverModal.hide();
-                    // Show area selection modal after closing cover page
-                    var areaModal = new bootstrap.Modal(document.getElementById('areaSelectionModal'), {
-                        backdrop: 'static',
-                        keyboard: false
-                    });
-                    areaModal.show();
-                });
-            });
-        </script>
-
 
         <!-- Bootstrap 5 Modal for Area Selection -->
         <div class="modal fade" id="areaSelectionModal" tabindex="-1" aria-labelledby="areaSelectionModalLabel" aria-hidden="true">
@@ -139,6 +119,27 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+    <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var coverModal = new bootstrap.Modal(document.getElementById('coverPageModal'), {
+                    backdrop: 'static',
+                    keyboard: true
+                });
+                coverModal.show();
+
+                document.getElementById('coverPageOkBtn').addEventListener('click', function() {
+                    coverModal.hide();
+                    // Show area selection modal after closing cover page
+                    var areaModal = new bootstrap.Modal(document.getElementById('areaSelectionModal'), {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                    areaModal.show();
+                });
+            });
+
+    </script>
 
     <script>
 
@@ -575,10 +576,6 @@ const gameAreas = [
 
         function initGame() {
 
-            // Hide all modals initially
-            hideModal(areaSelectionModal);
-            hideModal(gameOverModal);
-
             // Set canvas and overlay dimensions to match their container
             const mapCanvasContainer = document.getElementById('map-canvas-container');
             canvas.width = mapCanvasContainer.clientWidth;
@@ -611,7 +608,7 @@ const gameAreas = [
 
             // Event listener for restarting the game
             restartGameButton.onclick = () => {
-                hideModal(gameOverModal); // Hide game over modal
+                // hideModal(gameOverModal); // Hide game over modal
                 // debriefingOutput.textContent = ''; // Clear debriefing output
                 // debriefingOutput.classList.add('hidden');
                 initGame(); // Re-initialize the game
@@ -680,7 +677,7 @@ const gameAreas = [
          * @param {number} areaIndex - The index of the selected game area in `gameAreas` array.
          */
         function startGame(areaIndex) {
-            hideModal(areaSelectionModal); // Hide the area selection modal
+            //hideModal(areaSelectionModal); // Hide the area selection modal
             currentGameState = GAME_STATES.PLAYING; // Set game state to playing
 
             // Reset game variables
@@ -1154,12 +1151,15 @@ const gameAreas = [
         }
 
         function showModal(modalElement) {
-            modalElement.classList.remove('hidden');
+        
+                // Show area selection modal after closing cover page
+                var thisModal = new bootstrap.Modal(modalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
+                thisModal.show();
+            
         }
-        function hideModal(modalElement) {
-            modalElement.classList.add('hidden');
-        }
-
         // Initialize the game when the window loads
         window.onload = function() {
             initGame();
