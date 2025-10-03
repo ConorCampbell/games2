@@ -1,588 +1,61 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Plane Bombing Game</title>
+
+    <link rel="stylesheet" href="static/css/bomb.css" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-<!--     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
+
+    <!--     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #1a202c; /* Dark background */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden; /* Prevent body scroll */
-        }
-        #game-container {
-            position: relative;
-            background-color: #334155; /* Darker background for game area */
 
-            background: url('static/img/plane.jpg') center bottom / cover no-repeat;            
-            /* background-color: rgba(0, 0, 0, 0.8); fallback dark overlay */
-
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-            width: 90%; /* Responsive width */
-            max-width: 800px; /* Max width for desktop */
-            height: 90vh; /* Responsive height */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-            /* Added for 3D perspective */
-            perspective: 1000px; /* Defines the depth of the 3D scene */
-        }
-        #score-display {
-            background-color: #cbd5e1; /* Light gray */
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            color: #1a202c;
-            text-align: center;
-            width: 100%;
-            margin-bottom: 10px;
-            z-index: 2; /* Ensure score is above map and canvas */
-            position: relative;
-        }
-
-        #map-canvas-container {
-            position: relative;
-            width: 100%;
-            flex-grow: 1; /* Allow container to grow and take available space */
-            border-radius: 10px;
-            overflow: hidden; /* Ensure map stays within bounds */
-            /* Added for 3D rotation */
-            /* Tilt the map 45 degrees back */
-             transform: rotateX(45deg);
-            transform-origin: center bottom; /* Rotate from the bottom center */
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7); /* Add shadow for depth */
-        }
-
-        #leaflet-map {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0; /* Behind canvas */
-        }
-
-        canvas {
-            background-color: transparent; /* Make canvas transparent to show map */
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1; /* Above map for drawing */
-            pointer-events: none; /* Crucial: Allows clicks to pass through to map underneath */
-        }
-
-        #game-input-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2; /* On top of canvas to capture events */
-        }
-        .modal {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            border-radius: 15px; /* Match game container radius */
-        }
-        .modal-content {
-            background-color: #f7fafc; /* White */
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
-            max-width: 90%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        
-        .modal-content h2 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
-            color: #2d3748;
-        }
-        .modal-content p {
-            margin-bottom: 10px;
-            color: #4a5568;
-        }
-        .modal-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-        }
-        .modal-buttons button {
-            background-color: #4299e1; /* Blue */
-            color: white;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .modal-buttons button:hover {
-            background-color: #3182ce; /* Darker blue */
-            transform: translateY(-2px);
-        }
-        .modal-buttons button:active {
-            transform: translateY(0);
-            box-shadow: none;
-        }
-        .llm-output {
-            background-color: #e2e8f0;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-style: italic;
-            color: #2d3748;
-            text-align: left;
-            max-width: 500px;
-            width: 100%;
-            overflow-y: auto;
-            max-height: 150px;
-        }
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 10px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* Ensure the hidden class truly hides elements */
-        .hidden {
-            display: none !important;
-        }
-
-        /* Custom marker icon for targets */
-        .target-icon {
-            background-color: #10b981; /* Green */
-            border-radius: 50%;
-            display: flex;    
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            color: white;
-            border: 2px solid #047857;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            text-align: center;
-        }
-
-        .target-icon.target-hit, .crater-marker {
-            /* Fire-like animated background using multiple gradients */
-            /* position: relative; */
-            background:
-                radial-gradient(circle at 60% 40%, #fffbe6 0%, #ffe066 30%, transparent 70%),
-                radial-gradient(circle at 40% 70%, #ffb347 0%, #ff8300 60%, transparent 90%),
-                radial-gradient(circle at 70% 80%, #ff6a00 0%, #ff2e00 60%, transparent 90%),
-                radial-gradient(circle at 30% 20%, #ffd700 0%, #ff9100 50%, transparent 90%);
-            border: 2px solid #ff9100;
-            color: #fff;
-            box-shadow:
-                0 0 16px 8px rgba(255, 140, 0, 0.6),
-                0 0 32px 16px rgba(255, 69, 0, 0.4),
-                0 0 48px 24px rgba(255, 0, 0, 0.2);
-            animation-iteration-count: 3;
-            animation: fire-flicker 0.5s alternate;
-            overflow: visible;
-        }
-
-        @keyframes fire-flicker {
-            0% {
-                filter: brightness(1.1) blur(0.5px);
-                box-shadow:
-                    0 0 16px 8px rgba(255, 140, 0, 0.7),
-                    0 0 32px 16px rgba(255, 69, 0, 0.5),
-                    0 0 48px 24px rgba(255, 0, 0, 0.25);
-                /* transform: scale(1) rotate(-2deg); */
-            }
-            40% {
-                filter: brightness(1.3) blur(1.2px);
-                box-shadow:
-                    0 0 24px 12px rgba(255, 180, 0, 0.8),
-                    0 0 40px 20px rgba(255, 100, 0, 0.6),
-                    0 0 60px 30px rgba(255, 0, 0, 0.3);
-                /* transform: scale(1.04) rotate(2deg); */
-            }
-            70% {
-                filter: brightness(1.2) blur(0.7px);
-                box-shadow:
-                    0 0 20px 10px rgba(255, 160, 0, 0.7),
-                    0 0 36px 18px rgba(255, 80, 0, 0.5),
-                    0 0 54px 27px rgba(255, 0, 0, 0.22);
-                /* transform: scale(0.98) rotate(-1deg); */
-            }
-            100% {
-                filter: brightness(1.05) blur(0.3px);
-                box-shadow:
-                    0 0 14px 7px rgba(255, 120, 0, 0.6),
-                    0 0 28px 14px rgba(255, 50, 0, 0.4),
-                    0 0 42px 21px rgba(255, 0, 0, 0.18);
-                /* transform: scale(1.02) rotate(1deg); */
-            }
-        }
-
-
-        .target-icon.target-hit::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 350%; /* Make smoke larger than crater */
-            height: 550%;
-
-            /*background-color: rgba(120, 120, 120, 0.92);*/
-
-            /* background: radial-gradient(circle, rgba(180, 180, 180, 0.983) 0%, rgba(200, 200, 200, .25) 95%); */
-
-            background: radial-gradient(circle, rgba(80, 80, 80, 0.98) 0%, rgba(60, 60, 60, 0.7) 60%, rgba(120, 120, 120, 0.25) 95%);
-
-            border-radius: 50%;
-
-            transform: translate(-50%, -50%);
-            animation-iteration-count: 2;
-            animation: smoke-puff 3s ease-out forwards ;
-        }
-
-
-        /* --- NEW: CSS for Crater and Smoke Effect --- */
-        .crater-marker {
-            /* Dark brown for crater */
-            /* background-color: rgba(20, 10, 5, 0.2);  */
-            border-radius: 50%;
-            /* border: 1px solid #87373771; */
-            /* position: relative; */
-            /* box-shadow: inset 0 0 8px rgba(235, 223, 62, 0.8); */
-            animation: fade-out 2s ease-out forwards ;
-        }
-
-        @keyframes fade-out {
-            0% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 1;
-                background-color: rgba(180, 82, 33, 0.5);
-                border:brown;
-                background: none;
-                box-shadow: none;
-            }
-        }
-
-        .crater-marker::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 250%; /* Make smoke larger than crater */
-            height: 450%;
-            background: radial-gradient(circle, rgba(200, 200, 180, 0.7) 0%, rgba(220, 220, 200, 0) 95%);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            animation: smoke-puff 8s ease-out ;
-            opacity: 0;
-
-        }
-
-        @keyframes smoke-puff {
-            0% {
-                transform: translate(-50%, -50%) scale(0.2);
-                opacity: 1;
-            }
-            50% {
-                transform: translate(-50%, -90%) scale(0.3);
-                opacity: .5;
-            }
-            75% {
-                transform: translate(-50%, -120%) scale(1);
-                opacity: .5;
-            }
-            98% {
-                transform: translate(-50%, -150%) scale(1.55);
-                opacity: .3;
-            }
-            100% {
-                transform: translate(-50%, -150%) scale(0);
-                opacity: 0;
-                background:none
-            }
-
-        }
-        /* --- END NEW CSS --- */
-
-
-        /* Custom Zoom Controls Styling */
-        .custom-zoom-button {
-            background-color: rgba(45, 55, 72, 0.8); /* Semi-transparent dark gray */
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            transition: background-color 0.2s;
-        }
-        .custom-zoom-button:hover {
-            background-color: rgba(74, 85, 104, 0.9); /* Lighter on hover */
-        }
-
-            .modal-content {
-                position: relative;
-                /* Add background image */
-                background-image: url('static/img/plane.jpg');
-                background-size: cover;
-                background-position: center;
-                                
-                /* Overlay for darkening and blur */
-                overflow: hidden;
-            }
-
-            .modal-content h2, .modal-content p{
-                color: wheat;
-                font-weight: 900;
-            }
-            .modal-content::before {
-                content: "";
-                position: absolute;
-                inset: 0;
-                background: rgba(36, 51, 75, 0.35); /* dark overlay */ 
-                backdrop-filter: blur(1px);
-                z-index: 0;
-                /* border-radius: 10px; */
-            }
-            .modal-content > * {
-                position: relative;
-                z-index: 1;
-            }
-            
-            .cover-page {
-                position: fixed;
-                inset: 0;
-                z-index: 2000;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                background: url('static/img/plane.jpg') center center / cover no-repeat;
-                background-color: rgba(0, 0, 0, 0.8); /* fallback dark overlay */
-            }
-
-            .cover-content {
-                background-color: rgba(31, 41, 55, 0.8); /* dark gray */
-                border-radius: 1rem;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-                padding: 2rem;
-                max-width: 32rem;
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                position: relative;
-            }
-
-            .cover-title {
-                font-size: 1.875rem; /* ~text-3xl */
-                font-weight: bold;
-                color: white;
-                margin-bottom: 1rem;
-            }
-
-            .instructions-list {
-                font-size: 1.125rem; /* ~text-lg */
-                color: #e5e7eb; /* ~text-gray-200 */
-                margin-bottom: 1.5rem;
-                padding-left: 1.5rem;
-                text-align: left;
-                width: 100%;
-                list-style-type: disc;
-            }
-
-            .instructions-list li {
-                margin-bottom: 0.5rem;
-            }
-
-            .key {
-                font-weight: bold;
-            }
-
-            .play-button {
-                background-color: #2563eb; /* ~bg-blue-600 */
-                color: white;
-                font-weight: bold;
-                padding: 0.5rem 1.5rem;
-                border-radius: 0.5rem;
-                font-size: 1.25rem;
-                margin-top: 0.5rem;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-                border: none;
-                cursor: pointer;
-                transition: background-color 0.3s ease;
-            }
-
-            .play-button:hover {
-                background-color: #1d4ed8; /* ~hover:bg-blue-700 */
-            }
-
-.modal {
-    position: fixed;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1900;
-}
-
-/* Modal content box */
-/* .modal-content {
-    background-color: #fff;
-    padding: 2rem;
-    border-radius: 12px;
-    max-width: 800px;
-    width: 90%;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    text-align: center;
-}
- */
-/* Title and description */
-.modal-title {
-    font-size: 2rem;
-    font-weight: bold;
-    margin-bottom: 1rem;
-}
-
-.modal-description {
-    font-size: 1rem;
-    margin-bottom: 2rem;
-}
-
-/* Responsive grid for area selection buttons */
-.buttons-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-@media (min-width: 768px) {
-    .buttons-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-@media (min-width: 1024px) {
-    .buttons-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-        button.selected{
-            background-color:green;
-        }
-        
-/* Action buttons container */
-.action-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-}
-    
-    /* Start button styling */
-    .start-button{
-        background-color: #2563eb;
-    }
-    
-    button  {
-        color: white;
-        font-weight: bold;
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 0.5rem;
-        cursor: pointer;
-        margin-top: 1rem;
-        transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-        background-color: #1e40af;
-    }
-        
-    .start-button:hover {
-        background-color: #1e40af;
-    }
-    
-    /* Optional: hidden utility */
-    .hidden {
-        display: none !important;
-    }
-            
-    </style>
 </head>
-<body class="flex items-center justify-center min-h-screen bg-gray-900">
+<body class="flex items-center justify-center vh-100">
+
     <div id="game-container" class="relative">
 
-        <div id="coverPage" class="cover-page">
-            <div class="cover-content">
-                <h1 class="cover-title">Plane Bombing Game</h1>
-                <ul class="instructions-list">
-                    <li>Select a map area to begin your mission.</li>
-                    <li>Use <span class="key">Arrow Up/Down</span> or <span class="key">W/S</span> to move the plane vertically.</li>
-                    <li>Drop bombs with <span class="key">Space</span> or by tapping/clicking the game area.</li>
-                    <li>Hit targets for points. Misses reduce your score.</li>
-                    <li>Zoom the map with <span class="key">Arrow Left/Right</span> or the zoom buttons.</li>
-                    <li>Game ends when all targets are passed or hit.</li>
-                </ul>
-                <button id="coverPageOkBtn" class="play-button">
-                    OK, Let's Play!
-                </button>
+        <!-- Bootstrap 5 Modal for Cover Page -->
+        <div class="modal fade" id="coverPageModal" tabindex="-1" aria-labelledby="coverPageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header text-center">
+                        <h1 class="modal-title fs-4 " id="coverPageModalLabel">Plane Bombing Game</h1>
+                    </div>
+                    <div class="modal-body text-center">
+                        <ul class="list-group mb-3">
+                            <li class="list-group-item">Select a map area to begin your mission.</li>
+                            <li class="list-group-item">Use <span class="badge bg-secondary">Arrow Up/Down</span> or <span class="badge bg-secondary">W/S</span> to move the plane vertically.</li>
+                            <li class="list-group-item">Drop bombs with <span class="badge bg-secondary">Space</span> or by tapping/clicking the game area.</li>
+                            <li class="list-group-item">Hit targets for points. Misses reduce your score.</li>
+                            <li class="list-group-item">Zoom the map with <span class="badge bg-secondary">Arrow Left/Right</span> or the zoom buttons.</li>
+                            <li class="list-group-item">Game ends when all targets are passed or hit.</li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="coverPageOkBtn" class="btn btn-primary" data-bs-dismiss="modal">
+                            OK, Let's Play!
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const coverPage = document.getElementById('coverPage');
-            const okBtn = document.getElementById('coverPageOkBtn');
-            okBtn.onclick = function() {
-                coverPage.classList.add('hidden');
-            };
-        });
-    </script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var coverModal = new bootstrap.Modal(document.getElementById('coverPageModal'), {
+                    backdrop: 'static',
+                    keyboard: true
+                });
+                coverModal.show();
+            });
+        </script>
 
         <div id="score-display">Score: 0 | Hits: 0 | Misses: 0</div>
         <div id="map-canvas-container">
@@ -619,7 +92,6 @@
         
                     <div id="missionBriefingOutput" class="llm-output hidden"></div>
                     -->
-        
                     <button id="finalStartGameButton" class="start-button">
                         Start Mission!
                     </button>
@@ -645,6 +117,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
     <script>
