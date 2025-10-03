@@ -15,8 +15,7 @@
             position: relative;
             background-color: #334155; /* Darker background for game area */
 
-            background: url('../img/plane.jpg') center bottom / cover no-repeat;            
-            /* background-color: rgba(0, 0, 0, 0.8); fallback dark overlay */
+            background: url('../img/plane.jpg') center bottom / cover no-repeat;                        
 
             border-radius: 15px;
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
@@ -30,14 +29,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            
+
             padding: 20px;
             box-sizing: border-box;
 
-            
-            /* perspective: 1000px;  */
-            /* z-index: -1; */
+        }
 
+        #game-container .tilted{
+            perspective: 1000px; 
         }
 
         #score-display {
