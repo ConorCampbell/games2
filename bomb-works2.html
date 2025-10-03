@@ -613,7 +613,7 @@ const gameAreas = [
                 // debriefingOutput.textContent = ''; // Clear debriefing output
                 // debriefingOutput.classList.add('hidden');
 
-                areaModal.close();
+                areaModal.hide();
                 
                 initGame(); // Re-initialize the game
             };
@@ -634,7 +634,7 @@ const gameAreas = [
             finalStartGameButton.onclick = () => {
                 if (selectedGameArea) {
 
-                    areaModal.close();
+                    areaModal.hide();
                     const areaIndex = gameAreas.findIndex(area => area.name === selectedGameArea.name);
                     startGame(areaIndex);
                 }
