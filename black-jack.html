@@ -15,6 +15,15 @@
 
     <style>
 
+        #cards-dealt{
+            font-size: .75em;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            margin-top: .5rem;
+            font-size: .8rem;
+        }
+
         /*for the confetti*/
         particle {
             position: fixed;
@@ -50,14 +59,15 @@
         }        
 
         .game-table {
-            border: 10px solid var(--dark-wood);
+            /* border: 10px solid var(--dark-wood); */
             border-radius: 150px 150px 0 0;
-            background-color: var(--felt-green);
+            /* background-color: var(--felt-green); */
             min-height: 100vh;
-            padding: 2rem 2rem 200px 2rem; /* Added bottom padding for controls */
+            padding: 2rem 2rem 200px 2rem;
             max-width: 1000px;
-            box-shadow: inset 0 10px 20px rgba(0,0,0,0.4);
+            box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.4);
         }
+
         
         #betting-controls{
             max-width: 800px;
@@ -152,9 +162,9 @@
         }
 
         #message-box {
-            font-size: 1.8rem;
-            font-weight: 700;
-            line-height:1.1;
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height:1;
             color: var(--gold-accent);
             text-shadow: 2px 2px 4px black;
 /*             min-height: 50px; */
@@ -338,7 +348,7 @@
                  display:none;
              }
              #message-box{
-                 font-size: 1.2em
+                 font-size: 1.85em
              }
              #deck-container{
                  width: 25px;
@@ -388,8 +398,11 @@
                         <div class="deck-card" style="top: 2px; left: 2px;"></div>
                         <div class="deck-card card-back deck-card-top" style="top: 4px; left: 4px;"></div>
                     </div>
-                    <p id="cards-left" class="mt-2">Cards: 52</p>
-                    <p id="cards-dealt" class="mt-1 small"></p>
+
+                    <div class="mt-2">
+                        <span id="cards-left" class="mt-2">Cards: 52</span>
+                        <span id="cards-dealt" ></span>
+                    </div>
                 </div>
 
             </div>
@@ -405,10 +418,9 @@
             </div>
 
             <div class="row text-center m-1">
-                <div class="col">
-                    <div id="message-box" class="d-flex justify-content-center align-items-center">Place your bet!</div>
-                </div>
-
+                
+                    <div id="message-box" class="w-100">Place your bet!</div>
+                
                 <button id="btn-deal" class="btn btn-game btn-deal">Deal</button>
 
                 <!-- Game Action Buttons -->
@@ -706,11 +718,15 @@
         }
         
         function updateCardsLeftDisplay() {
+            
             cardsLeftEl.textContent = `Cards: ${deck.length}`;
 
-            cardsDealtEl.textContent = `10s: ${count_tens}`
-            cardsDealtEl.textContent += ` | Aces: ${count_aces}`
-            cardsDealtEl.textContent += ` | Low: ${count_low}`
+            cardsDealtEl.innerHTML = `
+                <div class="me-2">10s: ${count_tens}</div>
+                <div class="me-2">Aces: ${count_aces}</div>
+                <div class="me-2">Low: ${count_low}</div>
+            `;
+         
 
         }
 
