@@ -10,9 +10,8 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-
-
 </head>
+
 <body class="flex items-center justify-center vh-100">
 
     <div id="game-container" class="relative">
@@ -613,6 +612,9 @@ const gameAreas = [
                 // hideModal(gameOverModal); // Hide game over modal
                 // debriefingOutput.textContent = ''; // Clear debriefing output
                 // debriefingOutput.classList.add('hidden');
+
+                areaModal.close();
+                
                 initGame(); // Re-initialize the game
             };
 
@@ -631,6 +633,8 @@ const gameAreas = [
             // Event listener for finally starting the game after area selection
             finalStartGameButton.onclick = () => {
                 if (selectedGameArea) {
+
+                    areaModal.close();
                     const areaIndex = gameAreas.findIndex(area => area.name === selectedGameArea.name);
                     startGame(areaIndex);
                 }
