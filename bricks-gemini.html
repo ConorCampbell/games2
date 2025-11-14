@@ -33,6 +33,10 @@
             height: 100vh; /* Full viewport height */
         }
 
+        .game-container .row {
+            --bs-gutter-x: 0;
+        }
+
         /* .game-canvas-container::before{
             position: absolute;
             width: 100%;
@@ -115,7 +119,8 @@
     </div>
 
     <!-- Main Game Content -->
-    <div class="container game-container">
+    <div class="container-fluid game-container px-0">
+
         <!-- Info Bar: Level, Score, Lives -->
         <div class="row info-bar mb-2 px-3 ">
             <div class="col-4 text-start">
