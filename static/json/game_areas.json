@@ -1,0 +1,157 @@
+[    
+    {
+        name: "Urban Sprawl",
+        description: "Dense city, many targets but challenging to navigate.",
+        mapLength: 6000,
+        fixedLatitude: 40.7500,
+        initialCenterLng: -74.0500,
+        longitudinalSpan: 0.1,
+        zoom: 14,
+        targetLatLngs: [
+            { lat: 40.7550, lng: -74.0200, radiusMeters: 100, basePoints: 150 },
+            { lat: 40.7450, lng: -74.0000, radiusMeters: 150, basePoints: 120 },
+            { lat: 40.7600, lng: -73.9800, radiusMeters: 120, basePoints: 130 },
+            { lat: 40.7400, lng: -73.9600, radiusMeters: 180, basePoints: 110 },
+            { lat: 40.7580, lng: -73.9400, radiusMeters: 110, basePoints: 140 },
+            { lat: 40.7480, lng: -73.9200, radiusMeters: 160, basePoints: 125 },
+            { lat: 40.7620, lng: -73.9000, radiusMeters: 130, basePoints: 135 },
+            { lat: 40.7520, lng: -73.8800, radiusMeters: 190, basePoints: 115 }
+        ]
+    },
+
+    {
+        name: "The Gauntlet",
+        description: "Extreme length and target density. For pros only! The ultimate test.",
+        mapLength: 32000,
+        fixedLatitude: 51.5000,
+        initialCenterLng: -0.2000,
+        longitudinalSpan: 0.15,
+        zoom: 14,
+        targetLatLngs: [
+            { lat: 51.5020, lng: -0.1900, radiusMeters: 100, basePoints: 200 },
+            { lat: 51.4980, lng: -0.1800, radiusMeters: 180, basePoints: 180 },
+            { lat: 51.5030, lng: -0.1700, radiusMeters: 130, basePoints: 190 },
+            { lat: 51.4970, lng: -0.1600, radiusMeters: 220, basePoints: 170 },
+            { lat: 51.5010, lng: -0.1500, radiusMeters: 150, basePoints: 195 },
+            { lat: 51.4960, lng: -0.1400, radiusMeters: 250, basePoints: 165 },
+            { lat: 51.5040, lng: -0.1300, radiusMeters: 170, basePoints: 188 },
+            { lat: 51.4990, lng: -0.1200, radiusMeters: 280, basePoints: 162 },
+            { lat: 51.5050, lng: -0.1100, radiusMeters: 190, basePoints: 192 },
+            { lat: 51.4950, lng: -0.1000, radiusMeters: 300, basePoints: 168 },
+            { lat: 51.5000, lng: -0.0900, radiusMeters: 200, basePoints: 185 },
+            { lat: 51.4900, lng: -0.0800, radiusMeters: 320, basePoints: 158 },
+            { lat: 51.4850, lng: -0.0700, radiusMeters: 350, basePoints: 150 }
+        ]
+    },
+
+    {
+        name: "Tricky Tokyo Trail",
+        description: "A high-speed run through the heart of Tokyo, threading between skyscrapers.",
+        mapLength: 10000,
+        fixedLatitude: 35.6895,
+        initialCenterLng: 139.6000,
+        longitudinalSpan: 0.3,
+        zoom: 14,
+        targetLatLngs: Array.from({ length: 12 }, (_, i) => ({
+
+            lat: 35.6895 + ((Math.random() - 0.5) * 0.005 * difficulty),
+
+            lng: 139.6000 + (i * 0.015 -(difficulty * .00275)) +  (0.035 + (difficulty * 0.01) * Math.random()),
+
+            radiusMeters: 200 - (10*difficulty) + Math.random() * (200 - 10 *difficulty),
+
+            basePoints: 100 + Math.floor(Math.random() * 100)
+        }))
+    },
+    {
+        name: "Paris Dash",
+        description: "Fly low across Parisian rooftops, hitting targets along the Seine.",
+        mapLength: 9000,
+        fixedLatitude: 48.8566,
+        initialCenterLng: 2.2500,
+        longitudinalSpan: 0.25,
+        zoom: 14,
+        targetLatLngs: Array.from({ length: 11 }, (_, i) => ({
+            lat: 48.8566 + (Math.random() - 0.5) * 0.01,
+            lng: 2.2500 + i * 0.022,
+            radiusMeters: 140 + Math.random() * 90,
+            basePoints: 110 + Math.floor(Math.random() * 90)
+        }))
+    },
+    {
+        name: "São Paulo Run",
+        description: "A chaotic flight path through Brazil's largest city—watch for tight turns.",
+        mapLength: 11000,
+        fixedLatitude: -23.5505,
+        initialCenterLng: -46.7000,
+        longitudinalSpan: 0.35,
+        zoom: 14,
+        targetLatLngs: Array.from({ length: 13 }, (_, i) => ({
+            lat: -23.5505 + (Math.random() - 0.5) * 0.012,
+            lng: -46.7000 + i * 0.028,
+            radiusMeters: 160 + Math.random() * 120,
+            basePoints: 100 + Math.floor(Math.random() * 120)
+        }))
+    },
+    {
+        name: "Cairo Rush",
+        description: "Ancient meets modern in this eastbound streak across Cairo.",
+        mapLength: 9500,
+        fixedLatitude: 30.0444,
+        initialCenterLng: 31.1500,
+        longitudinalSpan: 0.3,
+        zoom: 14,
+        targetLatLngs: Array.from({ length: 12 }, (_, i) => ({
+            lat: 30.0444 + (Math.random() - 0.5) * 0.01,
+            lng: 31.1500 + i * 0.025,
+            radiusMeters: 140 + Math.random() * 110,
+            basePoints: 105 + Math.floor(Math.random() * 100)
+        }))
+    },
+    {
+        name: "Sydney Skim",
+        description: "Coastal cliffs and harbor bridges—precision required!",
+        mapLength: 10000,
+        fixedLatitude: -33.8688,
+        initialCenterLng: 151.1000,
+        longitudinalSpan: 0.35,
+        zoom: 14,
+        targetLatLngs: Array.from({ length: 12 }, (_, i) => ({
+            lat: -33.8688 + (Math.random() - 0.5) * 0.01,
+            lng: 151.1000 + i * 0.03,
+            radiusMeters: 130 + Math.random() * 100,
+            basePoints: 115 + Math.floor(Math.random() * 90)
+        }))
+    },
+    {
+        name: "Mumbai Blitz",
+        description: "A fast-paced challenge through India's economic capital.",
+        mapLength: 10000,
+        fixedLatitude: 19.0760,
+        initialCenterLng: 72.8000,
+        longitudinalSpan: 0.3,
+        zoom: 14,
+        targetLatLngs: Array.from({ length: 11 }, (_, i) => ({
+            lat: 19.0760 + (Math.random() - 0.5) * 0.012,
+            lng: 72.8000 + i * 0.027,
+            radiusMeters: 150 + Math.random() * 90,
+            basePoints: 100 + Math.floor(Math.random() * 100)
+        }))
+    },
+    {
+        name: "Toronto Glide",
+        description: "Smooth, scenic route across downtown and beyond.",
+        mapLength: 9500,
+        fixedLatitude: 43.6532,
+        initialCenterLng: -79.5000,
+        longitudinalSpan: 0.3,
+        zoom: 14,
+        targetLatLngs: Array.from({ length: 11 }, (_, i) => ({
+            lat: 43.6532 + (Math.random() - 0.5) * 0.02,
+            lng: -79.5000 + i * 0.022 + (Math.random() - 0.5) * 0.018,
+            radiusMeters: 140 + Math.random() * 125,
+            basePoints: 100 + Math.floor(Math.random() * 120)
+        }))
+    }
+];
+

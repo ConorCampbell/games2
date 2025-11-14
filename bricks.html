@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+  <title>Brick Breaker — Single Page (Bootstrap 5 + Plain JS)</title>
+  <!-- Bootstrap 5 CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Mobile-first layout */
+    :root{
+      --ui-bg: #0f1724; /* dark navy */
+      --panel: rgba(255,255,255,0.03);
+      --accent: #ffb86b;
+      --accent-2: #7ce7c5;
+    }
+    html,body{
+      height:100%;
+      background: radial-gradient(1200px 800px at 10% 10%, rgba(124,58,237,0.06), transparent),
+                  linear-gradient(180deg, var(--ui-bg), #071024 120%);
+      color:#e6eef8;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    .game-shell{
+      max-width:900px;
+      margin:0 auto;
+      padding:0.75rem;
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+    .hud{
+      display:flex;
+      gap:0.5rem;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:0.5rem;
+    }
+    .hud .left, .hud .right{display:flex; gap:0.5rem; align-items:center;}
+    .panel{
+      background:var(--panel);
+      border-radius:12px;
+      padding:0.5rem;
+      backdrop-filter: blur(6px) saturate(120%);
+      box-shadow: 0 6px 18px rgba(2,6,23,0.6) inset;
+    }
+    /* Canvas area is responsive, keeps aspect ratio for mobile-first */
+    .stage-wrap{
+      flex:1 1 auto;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0.5rem;
+    }
+    canvas#gameCanvas{
+      width:100%;
+      max-width:900px;
+      height:auto;
+      aspect-ratio: 9 / 16; /* tall mobile-first orientation — rotate to play in landscape*/
+      border-radius:12px;
+      box-shadow: 0 10px 40px rgba(2,6,23,0.7);
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      display:block;
+      touch-action: none; /* prevent rubber-banding */
+    }
+    /* Controls row */
+    .controls{display:flex; gap:8px; align-items:center;}
+    .small-btn{padding:0.25rem 0.5rem; font-size:0.85rem}
+    /* helper for landscape tip */
+    .hint {opacity:0.9; font-size:0.9rem}
+
+    @media (min-width:900px){
+      canvas#gameCanvas{ aspect-ratio: 16/9; }
+    }
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <div class="hud">
+      <div class="left">
+        <div class="panel d-flex align-items-center">
+          <strong id="levelLabel">Level 1</strong>&nbsp;•&nbsp;Score <span id="score">0</span>
+        </div>
+        <div class="panel d-flex align-items-center">
+          Lives: <span id="lives">3</span>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="controls panel">
+          <button class="btn btn-sm btn-outline-light small-btn" id="startBtn">Start</button>
+          <button class="btn btn-sm btn-outline-light small-btn" id="pauseBtn">Pause</button>
+          <button class="btn btn-sm btn-outline-light small-btn" id="muteBtn">Mute</button>
+          <button class="btn btn-sm btn-outline-light small-btn" id="fullscreenBtn">Full</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage-wrap">
+      <canvas id="gameCanvas" width="540" height="960" aria-label="Brick Breaker game canvas"></canvas>
+    </div>
+
+    <div class="mt-2 d-flex justify-content-between align-items-center">
+      <div class="hint panel p-2">Controls: drag or tap left/right to move paddle. Tilt device to steer. Pinch to zoom (visual only).</div>
+      <div class="panel p-2 small">10 levels • Rich visuals • Plain JavaScript</div>
+    </div>
+  </div>
+
+<script>
+/*
+  Brick Breaker — Single file implementation
+  - Mobile-first, responsive canvas
+  - Plain JavaScript (no frameworks)
+  - Bootstrap 5 used only for UI elements
+  - 10 levels with increasing difficulty
+  - WebAudio synthesized sounds (no external assets)
+  - Touch, pointer, keyboard, and deviceorientation controls
+
+  The code is heavily commented to explain architecture and key sections.
+*/
+
+// ============== Configuration ==============
+const CONFIG = {
+  canvasBaseWidth: 540, // base logical size — will scale to CSS size
+  canvasBaseHeight: 960,
+  paddleWidth: 110,
+  paddleHeight: 18,
+  ballRadius: 9,
+  brickRowsBase: 4,
+  brickCols: 7,
+  brickPadding: 8,
+  topOffset: 120,
+  maxLives: 3,
+  totalLevels: 10,
+  // difficulty progression: ballSpeed multiplier per level
+  levelSpeed: level => 1 + (level - 1) * 0.12,
+};
+
+// ============== Canvas & Rendering Context ==============
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let CANVAS_W = CONFIG.canvasBaseWidth;
+let CANVAS_H = CONFIG.canvasBaseHeight;
+
+// Resize canvas to match CSS while keeping logical resolution stable
+function fitCanvas() {
+  // use devicePixelRatio to improve clarity on mobile
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  CANVAS_W = rect.width;
+  CANVAS_H = rect.height;
+}
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
+
+// ============== Game State ==============
+const state = {
+  playing: false,
+  paused: false,
+  score: 0,
+  lives: CONFIG.maxLives,
+  level: 1,
+  paddleX: 0, // center x of paddle
+  ball: null, // ball object
+  bricks: [],
+  lastTime: 0,
+  particles: [],
+  input: {x:0,down:false},
+  muted: false,
+  deviceTiltX:0,
+};
+
+// ============== Utilities ==============
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function rand(a,b){return a + Math.random()*(b-a);} 
+
+// ============== Sound System (WebAudio) ==============
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+const audioCtx = AudioContext ? new AudioContext() : null;
+function playTone({freq=440, type='sine', duration=0.08, gain=0.15, when=0, decay=0.2}){
+  if(!audioCtx || state.muted) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type;
+  o.frequency.value = freq;
+  g.gain.value = gain;
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start(audioCtx.currentTime + when);
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + when + duration + decay);
+  o.stop(audioCtx.currentTime + when + duration + decay + 0.02);
+}
+function soundHit(){ playTone({freq:520, type:'square', duration:0.06, gain:0.08}); }
+function soundBrick(){ playTone({freq:400 + Math.random()*300, type:'sawtooth', duration:0.12, gain:0.12}); }
+function soundLife(){ playTone({freq:220, type:'sine', duration:0.3, gain:0.14}); }
+function soundLevel(){ playTone({freq:880, type:'sine', duration:0.2, gain:0.18}); playTone({freq:1320, type:'sine', duration:0.12, gain:0.08, when:0.12}); }
+function soundLose(){ playTone({freq:120, type:'sine', duration:0.4, gain:0.3}); }
+
+// Tap to unlock audio on mobile
+document.getElementById('startBtn').addEventListener('click', ()=>{ if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); });
+
+// ============== Game Entities ==============
+function makeBall(level){
+  const speed = 320 * CONFIG.levelSpeed(level); // logical px/sec tuned for base size
+  return {
+    x: CANVAS_W/2,
+    y: CANVAS_H*0.6,
+    vx: speed * (Math.random() > 0.5 ? 1 : -1) * 0.6,
+    vy: -speed,
+    r: Math.max(6, CONFIG.ballRadius * (1 - (level-1)*0.03)),
+    color: 'white',
+  };
+}
+
+function makePaddle(){
+  return {
+    w: Math.max(70, CONFIG.paddleWidth * (CANVAS_W/CONFIG.canvasBaseWidth)),
+    h: CONFIG.paddleHeight,
+    x: CANVAS_W/2,
+    y: CANVAS_H - 80,
+    speed: 1200,
+  };
+}
+
+function buildBricks(level){
+  // increase rows and vary patterns per level
+  const extra = Math.floor((level-1)/2);
+  const rows = CONFIG.brickRowsBase + extra;
+  const cols = CONFIG.brickCols + (level > 7 ? 1 : 0);
+
+  const padding = CONFIG.brickPadding;
+  const totalPadX = padding*(cols+1);
+  const brickW = (CANVAS_W - totalPadX) / cols;
+  const brickH = Math.max(18, 28 - extra*2);
+
+  const bricks = [];
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      // pattern variations: some bricks tougher on higher levels
+      const durability = (r + level + c) % Math.min(3, 1 + Math.floor(level/4)) + 1;
+      // occasional gaps
+      if(Math.random() < 0.05 + level*0.01) continue;
+      const x = padding + c*(brickW+padding);
+      const y = CONFIG.topOffset + r*(brickH+padding);
+      bricks.push({x,y,w:brickW,h:brickH,hit:0,dur:durability, colorIdx: (r + c) % 6});
+    }
+  }
+  return bricks;
+}
+
+// ============== Particle System (visuals) ==============
+function spawnParticles(x,y,count,color){
+  for(let i=0;i<count;i++){
+    state.particles.push({
+      x,y,
+      vx: rand(-180,180),
+      vy: rand(-260,40),
+      life: rand(0.4,1.1),
+      age:0,
+      size: rand(1,4),
+      color
+    });
+  }
+}
+function updateParticles(dt){
+  for(let i=state.particles.length-1;i>=0;i--){
+    const p = state.particles[i];
+    p.age += dt;
+    if(p.age >= p.life) { state.particles.splice(i,1); continue; }
+    p.vy += 600 * dt; // gravity
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+  }
+}
+function drawParticles(){
+  for(const p of state.particles){
+    const t = 1 - (p.age / p.life);
+    ctx.globalAlpha = t;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * t, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ============== Game Logic ==============
+function resetLevel(toLevel){
+  // called to initialize a level
+  state.level = toLevel;
+  state.score = state.score; // keep score
+  state.paddle = makePaddle();
+  state.ball = makeBall(toLevel);
+  state.bricks = buildBricks(toLevel);
+  state.particles = [];
+  document.getElementById('levelLabel').textContent = `Level ${toLevel}`;
+  document.getElementById('score').textContent = state.score;
+}
+
+function startGame(){
+  state.playing = true;
+  state.paused = false;
+  state.score = 0;
+  state.lives = CONFIG.maxLives;
+  resetLevel(1);
+  state.lastTime = performance.now();
+  requestAnimationFrame(loop);
+  soundLevel();
+}
+
+function nextLevel(){
+  if(state.level >= CONFIG.totalLevels){
+    // victory
+    state.playing = false;
+    showOverlay(`You Win! Score: ${state.score}`);
+    soundLevel();
+    return;
+  }
+  state.level++;
+  resetLevel(state.level);
+  soundLevel();
+}
+
+function loseLife(){
+  state.lives -= 1;
+  document.getElementById('lives').textContent = state.lives;
+  spawnParticles(state.ball.x, state.ball.y, 16, '#ff6b6b');
+  if(state.lives <= 0){
+    state.playing = false;
+    showOverlay(`Game Over — Score ${state.score}`);
+    soundLose();
+  } else {
+    state.ball = makeBall(state.level);
+    soundLife();
+  }
+}
+
+function togglePause(){
+  state.paused = !state.paused;
+  if(!state.paused) {
+    state.lastTime = performance.now();
+    requestAnimationFrame(loop);
+  }
+}
+
+// Overlay quick message
+function showOverlay(msg){
+  // simple alert fallback — can be replaced with fancier modal
+  setTimeout(()=>alert(msg), 80);
+}
+
+// ============== Collision helpers ==============
+function rectCircleColliding(circle, rect){
+  // simple AABB vs circle collision
+  const distX = Math.abs(circle.x - (rect.x + rect.w/2));
+  const distY = Math.abs(circle.y - (rect.y + rect.h/2));
+  if(distX > (rect.w/2 + circle.r)) return false;
+  if(distY > (rect.h/2 + circle.r)) return false;
+  if(distX <= (rect.w/2)) return true;
+  if(distY <= (rect.h/2)) return true;
+  const dx = distX - rect.w/2;
+  const dy = distY - rect.h/2;
+  return (dx*dx + dy*dy <= circle.r*circle.r);
+}
+
+// ============== Input: touch/pointer/keyboard/deviceorientation ==============
+// Pointer drag controls
+let pointerId = null;
+canvas.addEventListener('pointerdown', e => {
+  pointerId = e.pointerId; canvas.setPointerCapture(pointerId);
+  state.input.down = true; state.input.x = e.clientX;
+});
+canvas.addEventListener('pointermove', e => {
+  if(pointerId !== e.pointerId) return;
+  state.input.down = true; state.input.x = e.clientX;
+});
+canvas.addEventListener('pointerup', e => { if(pointerId===e.pointerId){ canvas.releasePointerCapture(pointerId); pointerId=null; state.input.down=false; } });
+
+// Keyboard for desktop
+window.addEventListener('keydown', e => {
+  if(e.key === 'ArrowLeft') state.input.x = -1;
+  if(e.key === 'ArrowRight') state.input.x = 1;
+  if(e.key === ' ') { if(!state.playing) startGame(); else togglePause(); }
+});
+window.addEventListener('keyup', e => {
+  if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') state.input.x = 0;
+});
+
+// Device tilt
+window.addEventListener('deviceorientation', e => {
+  // gamma is left-to-right tilt in degrees (-90 .. 90)
+  if(e.gamma !== null) state.deviceTiltX = clamp(e.gamma / 30, -1, 1);
+});
+
+// Buttons
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  if(!state.playing) startGame(); else { state.ball = makeBall(state.level); state.paddle = makePaddle(); }
+});
+document.getElementById('pauseBtn').addEventListener('click', ()=>{ togglePause(); });
+document.getElementById('muteBtn').addEventListener('click', ()=>{ state.muted = !state.muted; document.getElementById('muteBtn').textContent = state.muted ? 'Unmute' : 'Mute'; });
+document.getElementById('fullscreenBtn').addEventListener('click', ()=>{ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); });
+
+// ============== Physics & Update Loop ==============
+function update(dt){
+  if(!state.playing || state.paused) return;
+  // update paddle from input
+  const padd = state.paddle;
+  // pointer/pan
+  if(state.input.down && state.input.x){
+    // translate clientX into canvas coords
+    const rect = canvas.getBoundingClientRect();
+    const px = state.input.x - rect.left;
+    padd.x = clamp(px, padd.w/2, CANVAS_W - padd.w/2);
+  } else if(Math.abs(state.deviceTiltX) > 0.02){
+    // tilt control moves paddle relatively
+    padd.x += state.deviceTiltX * padd.speed * dt * 0.6;
+    padd.x = clamp(padd.x, padd.w/2, CANVAS_W - padd.w/2);
+  } else if(state.input.x === -1){ padd.x -= padd.speed * dt; padd.x = Math.max(padd.w/2, padd.x); }
+  else if(state.input.x === 1){ padd.x += padd.speed * dt; padd.x = Math.min(CANVAS_W - padd.w/2, padd.x); }
+
+  // update ball
+  const b = state.ball;
+  b.x += b.vx * dt;
+  b.y += b.vy * dt;
+
+  // walls
+  if(b.x - b.r <= 0){ b.x = b.r; b.vx = Math.abs(b.vx); soundHit(); }
+  if(b.x + b.r >= CANVAS_W){ b.x = CANVAS_W - b.r; b.vx = -Math.abs(b.vx); soundHit(); }
+  if(b.y - b.r <= 0){ b.y = b.r; b.vy = Math.abs(b.vy); soundHit(); }
+
+  // paddle collision
+  const paddleRect = {x: padd.x - padd.w/2, y: padd.y - padd.h/2, w: padd.w, h: padd.h};
+  if(rectCircleColliding(b, paddleRect) && b.vy > 0){
+    // compute hit location to change horizontal velocity
+    const rel = (b.x - paddleRect.x) / paddleRect.w; // 0 .. 1
+    const angle = (rel - 0.5) * Math.PI * 0.75; // -~135deg to 135deg
+    const speed = Math.hypot(b.vx, b.vy);
+    b.vx = Math.sin(angle) * speed;
+    b.vy = -Math.abs(Math.cos(angle) * speed);
+    // slight speed increase with level
+    const incr = 1 + 0.02 * state.level;
+    b.vx *= incr; b.vy *= incr;
+    spawnParticles(b.x, b.y + b.r, 6, '#ffffff');
+    soundHit();
+  }
+
+  // bricks collision
+  for(let i=state.bricks.length-1;i>=0;i--){
+    const br = state.bricks[i];
+    if(rectCircleColliding(b, br)){
+      // basic reflect: determine side
+      const prevX = b.x - b.vx * dt;
+      const prevY = b.y - b.vy * dt;
+      // if previously to left or right
+      if(prevX + b.r <= br.x || prevX - b.r >= br.x + br.w) b.vx *= -1;
+      else b.vy *= -1;
+
+      br.hit += 1;
+      // points depend on durability
+      state.score += 100 * br.dur;
+      document.getElementById('score').textContent = state.score;
+      spawnParticles(b.x, b.y, 8, ['#ffb86b','#7ce7c5','#7f5af0'][br.colorIdx%3]);
+      soundBrick();
+
+      if(br.hit >= br.dur){
+        // destroy
+        state.bricks.splice(i,1);
+        // chance to spawn a small speed-up pickup (visual only)
+        if(Math.random() < 0.08){ spawnParticles(br.x + br.w/2, br.y + br.h/2, 16, '#7ce7c5'); }
+      }
+      break; // only one brick per update to avoid multiple collisions
+    }
+  }
+
+  // bottom check
+  if(b.y - b.r > CANVAS_H){
+    loseLife();
+  }
+
+  // win level?
+  if(state.bricks.length === 0){
+    nextLevel();
+  }
+
+  updateParticles(dt);
+}
+
+// ============== Rendering ==============
+function draw(){
+  // clear
+  ctx.clearRect(0,0,CANVAS_W,CANVAS_H);
+
+  // decorative background gradient and glows
+  const g = ctx.createLinearGradient(0,0,0,CANVAS_H);
+  g.addColorStop(0, 'rgba(14,21,37,0.9)');
+  g.addColorStop(1, 'rgba(4,8,15,0.95)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,CANVAS_W,CANVAS_H);
+
+  // shining halo at top
+  const halo = ctx.createRadialGradient(CANVAS_W*0.1, CANVAS_H*0.08, 10, CANVAS_W*0.1, CANVAS_H*0.08, CANVAS_W*0.9);
+  halo.addColorStop(0,'rgba(124,58,237,0.06)'); halo.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle = halo; ctx.fillRect(0,0,CANVAS_W,CANVAS_H*0.35);
+
+  // draw bricks
+  for(const b of state.bricks){
+    // color by durability and index
+    const hue = (b.colorIdx * 55 + (b.dur*20)) % 360;
+    // multidimensional gradient per brick
+    const bg = ctx.createLinearGradient(b.x, b.y, b.x+b.w, b.y+b.h);
+    bg.addColorStop(0, `hsl(${hue} 70% 65% / 0.95)`);
+    bg.addColorStop(1, `hsl(${(hue+40)%360} 60% 45% / 0.95)`);
+    ctx.fillStyle = bg;
+    roundRect(ctx, b.x, b.y, b.w, b.h, 6); ctx.fill();
+    // inner gloss
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1; roundRect(ctx, b.x+2, b.y+2, b.w-4, b.h-4, 5); ctx.stroke();
+    // durability indicator
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.font = `${Math.max(10, b.h/2)}px system-ui`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(b.dur - b.hit, b.x + b.w/2, b.y + b.h/2);
+  }
+
+  // draw paddle with soft shadow
+  const p = state.paddle;
+  ctx.save();
+  const grad = ctx.createLinearGradient(p.x - p.w/2, p.y - p.h/2, p.x + p.w/2, p.y + p.h/2);
+  grad.addColorStop(0, 'rgba(255,255,255,0.06)'); grad.addColorStop(1,'rgba(255,255,255,0.02)');
+  ctx.fillStyle = grad; roundRect(ctx, p.x - p.w/2, p.y - p.h/2, p.w, p.h, 8); ctx.fill();
+  // neon edge
+  ctx.strokeStyle = 'rgba(124,58,237,0.65)'; ctx.lineWidth = 2; roundRect(ctx, p.x - p.w/2, p.y - p.h/2, p.w, p.h, 8); ctx.stroke();
+  ctx.restore();
+
+  // draw ball
+  const b = state.ball;
+  const brad = ctx.createRadialGradient(b.x - b.r*0.4, b.y - b.r*0.4, 1, b.x, b.y, b.r);
+  brad.addColorStop(0, 'rgba(255,255,255,1)'); brad.addColorStop(1, 'rgba(255,255,255,0.07)');
+  ctx.fillStyle = brad; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+  // ball glow
+  ctx.beginPath(); ctx.arc(b.x, b.y, b.r*2.2, 0, Math.PI*2); ctx.fillStyle = 'rgba(124,58,237,0.04)'; ctx.fill();
+
+  drawParticles();
+
+  // HUD floating text (score and level)
+  ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(10,10,140,36);
+  ctx.fillStyle = '#fff'; ctx.font = '14px system-ui'; ctx.fillText(`Score ${state.score}`, 18, 32);
+}
+
+// tiny helper to draw rounded rectangles
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+// main loop
+function loop(ts){
+  const dt = Math.min(1/30, (ts - state.lastTime)/1000 || 0);
+  state.lastTime = ts;
+  if(state.playing && !state.paused){
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  } else {
+    draw();
+  }
+}
+
+// initialize default state for first paint
+(function init(){
+  state.paddle = makePaddle();
+  state.ball = makeBall(1);
+  state.bricks = buildBricks(1);
+  document.getElementById('lives').textContent = state.lives;
+  document.getElementById('score').textContent = state.score;
+  draw();
+})();
+
+// Optional: auto-scale internal logical values when CSS canvas size changes
+let resizeObserver = new ResizeObserver(entries => {
+  for(const e of entries){ fitCanvas(); /* recalc paddle dimensions relative to new size */ state.paddle.w = Math.max(70, CONFIG.paddleWidth * (CANVAS_W/CONFIG.canvasBaseWidth)); }
+});
+resizeObserver.observe(canvas);
+
+</script>
+</body>
+</html>

@@ -14,14 +14,14 @@
 
 <body class="flex items-center justify-center vh-100">
 
-    <div id="game-container" class="relative">
+    <div id="game-container">
 
         <!-- Bootstrap 5 Modal for Cover Page -->
         <div class="modal fade" id="coverPageModal" tabindex="-1" aria-labelledby="coverPageModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header text-center">
-                        <h1 class="modal-title fs-4 " id="coverPageModalLabel">Plane Bombing Game</h1>
+                        <h2 class="modal-title" id="coverPageModalLabel">Plane Bombing Game</h2>
                     </div>
                     <div class="modal-body text-center">
                         <ul class="list-group mb-3">
@@ -41,7 +41,6 @@
                 </div>
             </div>
         </div>
-
 
         <!-- Bootstrap 5 Modal for Area Selection -->
         <div class="modal fade" id="areaSelectionModal" tabindex="-1" aria-labelledby="areaSelectionModalLabel" aria-hidden="true">
@@ -75,8 +74,7 @@
 
         <div id="gameOverModal" class="modal fade">
             <div class="modal-dialog modal-dialog-centered">
-
-            <div class="modal-content">
+            <div class="modal-content" style = "height: 90vh;justify-content: space-evenly;">
                 <h2 id="gameOverTitle">Game Over!</h2>
                 <p id="finalScore">Final Score: 0</p>
                 <p id="proximityResults">Hits: 0 | Misses: 0</p>
@@ -118,31 +116,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
+    
+
     <script>
+
         var coverModal;
         var areaModal;
         
-            document.addEventListener('DOMContentLoaded', function() {
-                
-                coverModal = new bootstrap.Modal(document.getElementById('coverPageModal'), {
-                    backdrop: 'static',
-                    keyboard: true
-                });
-                
-                areaModal = new bootstrap.Modal(document.getElementById('areaSelectionModal'), {
-                        backdrop: 'static',
-                        keyboard: false
-                });
-                
-                coverModal.show();
-
-                document.getElementById('coverPageOkBtn').addEventListener('click', function() {
-                    coverModal.hide();
-                    areaModal.show();
-                });
-
-            });
-
+        
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const gameInputOverlay = document.getElementById('game-input-overlay');
@@ -157,7 +138,7 @@
         
         const finalStartGameButton = document.getElementById('finalStartGameButton');
 
-        const gameOverModal = document.getElementById('gameOverModal');
+        const gameOverModalEl = document.getElementById('gameOverModal');
         
         const gameOverTitle = document.getElementById('gameOverTitle');
         const finalScoreDisplay = document.getElementById('finalScore');
@@ -183,7 +164,7 @@
             sound.currentTime = 0; // Rewind to the start
             sound.play();
         }
-        // --- END SOUND ---
+        
 
         // Touch control variables
         let touchStartInitialY = 0;
@@ -236,9 +217,11 @@
         let totalMapLength = 0;
         let selectedGameArea = null;
 
-    // set a difficulty level from 1-5
+        // set a difficulty level from 1-5
         let difficulty = 8
 
+
+        // loadMaps();
 
 const gameAreas = [
     // ✅ Existing - New York
@@ -403,6 +386,7 @@ const gameAreas = [
 ];
 
 
+
         // --- Map Initialization ---
         // --- Input Handling ---
         let keysPressed = {};
@@ -467,6 +451,8 @@ const gameAreas = [
             }
         });
 
+
+
         gameInputOverlay.addEventListener('touchend', (e) => {
             // Get client coordinates, handling both touch and mouse for robustness
             const clientX = e.changedTouches[0] ? e.changedTouches[0].clientX : e.clientX;
@@ -476,6 +462,7 @@ const gameAreas = [
             gameInputOverlay.style.pointerEvents = 'none';
             const targetElement = document.elementFromPoint(clientX, clientY);
             gameInputOverlay.style.pointerEvents = 'auto'; // Re-enable pointer events
+
 
             const wasTouchActiveForGame = touchIsActive; // Store state before resetting
             const touchDuration = Date.now() - touchStartTime; // Calculate touch duration
@@ -575,9 +562,15 @@ const gameAreas = [
          */
 
         function initGame() {
+            
+            // Cancel any ongoing animation frame to prevent multiple loops
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
 
             // Set canvas and overlay dimensions to match their container
             const mapCanvasContainer = document.getElementById('map-canvas-container');
+
             canvas.width = mapCanvasContainer.clientWidth;
             canvas.height = mapCanvasContainer.clientHeight;
             gameInputOverlay.style.width = mapCanvasContainer.clientWidth + 'px';
@@ -593,28 +586,25 @@ const gameAreas = [
             // missionBriefingOutput.classList.add('hidden');
             // briefingLoadingSpinner.classList.add('hidden');
             
-            actionButtonsContainer.classList.add('hidden'); // Hide briefing/start game buttons
+            // actionButtonsContainer.classList.add('hidden'); // Hide briefing/start game buttons
 
             // Reset selected area button styles
             areaSelectionButtonsContainer.querySelectorAll('button').forEach(btn => btn.classList.remove('selected'));
+
             // Reset area description
             document.getElementById('areaSelectionDescription').textContent = "Choose an area to fly over and bomb targets. Longer maps offer more challenges and potential points!";
 
             // Render the game area selection buttons
             renderAreaSelection();
-            
-            // showModal(areaSelectionModal); // Show the area selection modal
-
+        
             currentGameState = GAME_STATES.START; // Set game state to start
 
             // Event listener for restarting the game
-            restartGameButton.onclick = () => {
-                // hideModal(gameOverModal); // Hide game over modal
+            restartGameButton.onclick = () => {        
                 // debriefingOutput.textContent = ''; // Clear debriefing output
                 // debriefingOutput.classList.add('hidden');
-
-                areaModal.hide();
-                
+                areaModal.hide();                
+                gameOverModal.hide();
                 initGame(); // Re-initialize the game
             };
 
@@ -655,12 +645,19 @@ const gameAreas = [
         /**
          * Renders the buttons for selecting game areas in the modal.
          */
+
         function renderAreaSelection() {
+            
             areaSelectionButtonsContainer.innerHTML = ''; // Clear existing buttons
+
             gameAreas.forEach((area, index) => {
+
                 const button = document.createElement('button');
+
                 button.textContent = `${area.name} (${(area.mapLength / 100).toFixed(1)}km)`; // Display name and length
                 button.title = area.description; // Tooltip for description
+
+                button.classList.add("btn", "btn-outline-warning", "m-1", "p-1", "flex-grow-1", "text-center", "area-button");
                 button.onclick = () => {
                     selectedGameArea = area; // Set the selected game area
                     
@@ -1157,19 +1154,44 @@ const gameAreas = [
         }
 
         function showModal(modalElement) {
-        
-                // Show area selection modal after closing cover page
-                var thisModal = new bootstrap.Modal(modalElement, {
-                    backdrop: 'static',
-                    keyboard: false
-                });
-                thisModal.show();
-            
+            var thisModal = new bootstrap.Modal(modalElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            thisModal.show();            
         }
-        // Initialize the game when the window loads
-        window.onload = function() {
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            coverModal = new bootstrap.Modal(document.getElementById('coverPageModal'), {
+                    backdrop: 'static',
+                    keyboard: true
+            });
+
+            areaModal = new bootstrap.Modal(document.getElementById('areaSelectionModal'), {
+                        backdrop: 'static',
+                        keyboard: false
+            });
+            
+            
+            gameOverModal = new bootstrap.Modal(document.getElementById('gameOverModal'), {
+                    backdrop: 'static',
+                    keyboard: true
+            });
+
+            // show instructions on first page load
+            coverModal.show();
+
+            document.getElementById('coverPageOkBtn').addEventListener('click', function() {
+                coverModal.hide();
+                areaModal.show();
+            });
+
             initGame();
-        };
+
+        });
+
     </script>
+
 </body>
 </html>

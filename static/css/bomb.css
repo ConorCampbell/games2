@@ -30,8 +30,7 @@
             flex-direction: column;
             align-items: center;
 
-            padding: 20px;
-            box-sizing: border-box;
+            padding: 8px 12px;            
 
         }
 
@@ -166,10 +165,30 @@
         }
 
         .modal-content {
-            
             background-image: url('../img/plane.jpg');
             background-size: cover;
-            background-position: center;                
+            background-position: center;
+            background-color: rgba(31, 41, 55, 0.85); /* darker overlay */
+            position: relative;
+        }
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: inherit;
+            filter: blur(6px) brightness(0.5);
+            z-index: 0;
+            border-radius: 8px;
+        }
+        .modal-content > * {
+            position: relative;
+            z-index: 1;
+        }
+        .modal-content h2, .modal-content p {
+            color: wheat;
+            font-weight: 900;
+            line-height: 1;
+            text-align: center;
         }
 
         .modal-content h2, .modal-content p{
@@ -503,7 +522,8 @@
         button.selected{
             background-color:green;
         }
-        
+
+
 /* Action buttons container */
 .action-buttons {
     display: flex;
@@ -531,14 +551,6 @@
     button:hover {
         background-color: #1e40af;
     }
-        
     .start-button:hover {
         background-color: #1e40af;
     }
-    
-    /* Optional: hidden utility */
-    .hidden {
-        display: none !important;
-    }
-            
-    
