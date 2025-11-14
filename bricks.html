@@ -31,12 +31,16 @@
     }
     .hud{
       display:flex;
+      flex-wrap: wrap;
       gap:0.5rem;
       align-items:center;
       justify-content:space-between;
       margin-bottom:0.5rem;
     }
     .hud .left, .hud .right{display:flex; gap:0.5rem; align-items:center;}
+    .hud span{
+        margin-left: .25rem;
+    }
     .panel{
       background:var(--panel);
       border-radius:12px;
