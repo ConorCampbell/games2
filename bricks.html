@@ -14,6 +14,7 @@
       --accent: #ffb86b;
       --accent-2: #7ce7c5;
     }
+
     html,body{
       height:100%;
       background: radial-gradient(1200px 800px at 10% 10%, rgba(124,58,237,0.06), transparent),
@@ -21,6 +22,7 @@
       color:#e6eef8;
       font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
+
     .game-shell{
       max-width:900px;
       margin:0 auto;
@@ -77,12 +79,72 @@
       canvas#gameCanvas{ aspect-ratio: 16/9; }
     }
   </style>
+
+  <style>
+    /* this is our basic canvas */
+    /* header,body, footer */
+
+    html, body {
+        height: 100%;
+        overflow: hidden;
+        margin: 0;
+        background: linear-gradient(180deg, #000000, #1a1a1a);
+    }
+
+    /* Define header & footer heights so we can clamp canvas */
+    :root {
+        --header-h: 56px;
+        --footer-h: 40px;
+        --available-height: calc(100vh - var(--header-h) - var(--footer-h));
+    }
+
+    .game-layout {
+        display: grid;
+        grid-template-rows: var(--header-h) 1fr var(--footer-h);
+        height: 100vh;
+    }
+
+    header, footer {
+        text-align: center;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.4);
+    }
+
+    .canvas-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: .5rem;
+    }
+
+    canvas {
+        width: 100%;
+        height: auto;
+
+        /* Clamp canvas height to what's left after header + footer */
+        max-height: var(--available-height);
+
+        /* Desktop max sizes */
+        max-width: 800px;
+        max-height: min(800px, var(--available-height));
+
+        background: #000;
+        border: 2px solid #333;
+        border-radius: 8px;
+    }
+
+</style>
+    
 </head>
 <body>
-  <div class="game-shell">
-    <div class="hud">
+
+  <div class="game-layout">
+    <header class="hud">
       <div class="left">
-        <div class="panel d-flex align-items-center">
+        <div class="panel d-flex align-items-between">
           <strong id="levelLabel">Level 1</strong>&nbsp;•&nbsp;Score <span id="score">0</span>
         </div>
         <div class="panel d-flex align-items-center">
@@ -98,16 +160,17 @@
           <button class="btn btn-sm btn-outline-light small-btn" id="fullscreenBtn">Full</button>
         </div>
       </div>
-    </div>
+    </header>
 
-    <div class="stage-wrap">
+    <div class="stage-wrap canvas-wrapper">
       <canvas id="gameCanvas" width="540" height="960" aria-label="Brick Breaker game canvas"></canvas>
     </div>
 
-    <div class="mt-2 d-flex justify-content-between align-items-center">
+    <footer class="d-flex justify-content-between align-items-center">
       <div class="hint panel p-2">Controls: drag or tap left/right to move paddle. Tilt device to steer. Pinch to zoom (visual only).</div>
       <div class="panel p-2 small">10 levels • Rich visuals • Plain JavaScript</div>
-    </div>
+    </footer>
+
   </div>
 
 <script>
