@@ -267,7 +267,9 @@ function soundLevel(){ playTone({freq:880, type:'sine', duration:0.2, gain:0.18}
 function soundLose(){ playTone({freq:120, type:'sine', duration:0.4, gain:0.3}); }
 
 // Tap to unlock audio on mobile
-document.getElementById('startBtn').addEventListener('click', ()=>{ if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); });
+document.getElementById('startBtn').addEventListener('click', ()=>{ 
+    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
+});
 
 // ============== Game Entities ==============
 function makeBall(level){
