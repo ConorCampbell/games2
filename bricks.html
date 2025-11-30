@@ -503,7 +503,7 @@ function update(dt){
   if(rectCircleColliding(b, paddleRect) && b.vy > 0){
     // compute hit location to change horizontal velocity
     const rel = (b.x - paddleRect.x) / paddleRect.w; // 0 .. 1
-    const angle = (rel - 0.5) * Math.PI * 0.75; // -~135deg to 135deg
+    const angle = (rel - 0.5) * Math.PI * 0.5; // -~135deg to 135deg
     const speed = Math.hypot(b.vx, b.vy);
     b.vx = Math.sin(angle) * speed;
     b.vy = -Math.abs(Math.cos(angle) * speed);
