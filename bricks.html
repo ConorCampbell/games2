@@ -167,8 +167,8 @@
     </div>
 
     <footer class="d-flex justify-content-between align-items-center">
-      <div class="hint panel p-2">Controls: drag or tap left/right to move paddle. Tilt device to steer. Pinch to zoom (visual only).</div>
-      <div class="panel p-2 small">10 levels • Rich visuals • Plain JavaScript</div>
+      <div class="hint panel p-2">Controls: drag or tap left/right to move paddle. Tilt device to steer.</div>
+      <div class="panel p-2 small">10 levels</div>
     </footer>
 
   </div>
@@ -611,8 +611,9 @@ function draw(){
   drawParticles();
 
   // HUD floating text (score and level)
-  ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(10,10,140,36);
-  ctx.fillStyle = '#fff'; ctx.font = '14px system-ui'; ctx.fillText(`Score ${state.score}`, 18, 32);
+  // ctx.fillStyle = 'rgba(255,255,255,0.06)'; ctx.fillRect(10,10,140,36);
+  // ctx.fillStyle = '#fff'; ctx.font = '14px system-ui'; ctx.fillText(`Score ${state.score}`, 18, 32);
+
 }
 
 // tiny helper to draw rounded rectangles
