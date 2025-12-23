@@ -23,18 +23,10 @@
             height: 100vh;
             display: flex;
             justify-content: center;
+            user-select: none; /* Prevent text selection */
         }
 
-        /* --- THE WALL (Game Board) --- */
-        #game-container {
-            position: relative;
-            width: 100%;
-            max-width: 600px;
-            height: 100%;                 
-            opacity: 80%;
-            background-color: rgba(0,0,0,0.2);
-        }
-
+        
         .background-container {
     /* Set the container position to relative so the pseudo-element can be positioned absolutely within it */
     position: relative;
@@ -73,19 +65,37 @@
 }
 
 
+
+        /* --- THE WALL (Game Board) --- */
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4)),
+                url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.4"/></svg>'),
+                #d3d3d3; 
+            background-size: cover, 200px 200px, cover;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        #confetti-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 250; /* Above UI, below Modal */
+        }
+
         /* --- FINISH LINE --- */
         #finish-line {
             position: absolute;
             top: 10%;
             width: 100%;
             height: 20px;
-            background: repeating-linear-gradient(
-                45deg,
-                #ffcc00,
-                #ffcc00 10px,
-                #000 10px,
-                #000 20px
-            );
+            background: repeating-linear-gradient(45deg, #ffcc00, #ffcc00 10px, #000 10px, #000 20px);
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
             z-index: 1;
         }
@@ -105,21 +115,20 @@
         /* --- THE FLIES --- */
         .fly-lane {
             position: absolute;
-            bottom: 0;
-            top: 0;
+            bottom: 0; top: 0;
             width: 50%;
             display: flex;
             justify-content: center;
-            align-items: flex-end; /* Start at bottom */
+            align-items: flex-end; 
         }
         
         #lane-1 { left: 0; border-right: 1px dashed rgba(0,0,0,0.1); }
         #lane-2 { right: 0; }
 
         .fly {
-            font-size: 4rem; /* High Def Vector scaling */
+            font-size: 4rem; 
             position: absolute;
-            bottom: 20px; /* Starting position */
+            bottom: 20px; 
             transition: bottom 0.1s linear, transform 0.05s ease;
             filter: drop-shadow(5px 10px 4px rgba(0,0,0,0.4));
             z-index: 10;
@@ -140,30 +149,19 @@
         /* Animation for buzzing */
         @keyframes buzz {
             0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
+            25% { transform: translate(-2px, 0px) rotate(2deg); }
             50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
+            75% { transform: translate(2px, 1px) rotate(-2deg); }
+            100% { transform: translate(0px, -2px) rotate(0deg); }
         }
-
-        .buzzing {
-            animation: buzz 0.1s infinite;
-        }
+        .buzzing { animation: buzz 0.08s infinite; }
 
         /* --- UI OVERLAY --- */
         #ui-layer {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none; /* Let clicks pass through to game logic if needed */
+            bottom: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -173,8 +171,7 @@
         /* Header HUD */
         #hud {
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             width: 100%;
             padding: 15px;
             box-sizing: border-box;
@@ -182,6 +179,7 @@
             justify-content: space-between;
             align-items: center;
             background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            pointer-events: all;
         }
 
         .bankroll {
@@ -192,6 +190,19 @@
             font-weight: bold;
             color: var(--neon-green);
         }
+
+        /* Sound Toggle */
+        #sound-toggle {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: background 0.2s;
+        }
+        #sound-toggle:hover { background: rgba(255,255,255,0.3); }
 
         /* Betting Panel */
         #betting-panel {
@@ -204,17 +215,11 @@
             transition: transform 0.3s ease;
         }
 
-        .panel-hidden {
-            transform: translateY(110%);
-        }
+        .panel-hidden { transform: translateY(110%); }
 
         h2 { margin: 0 0 15px 0; font-size: 1.2rem; text-transform: uppercase; color: #aaa; text-align: center;}
 
-        .card-container {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+        .card-container { display: flex; gap: 15px; margin-bottom: 20px; }
 
         .fly-card {
             flex: 1;
@@ -225,7 +230,6 @@
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
-            position: relative;
         }
 
         .fly-card:hover { background: rgba(255,255,255,0.1); }
@@ -240,109 +244,71 @@
             display: block;
             margin-top: 5px;
         }
-
         .odds-up { color: var(--neon-green); }
         .odds-down { color: var(--neon-red); }
 
-        .controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            justify-content: center;
-        }
+        .controls { display: flex; gap: 10px; align-items: center; justify-content: center; }
 
         input[type="number"] {
-            background: #333;
-            border: 1px solid #555;
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            width: 80px;
-            text-align: center;
+            background: #333; border: 1px solid #555;
+            color: white; padding: 12px; border-radius: 8px;
+            font-size: 1rem; width: 80px; text-align: center;
         }
 
         button.btn-primary {
-            background: var(--neon-green);
-            color: black;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            flex-grow: 1;
+            background: var(--neon-green); color: black;
+            border: none; padding: 12px 30px; border-radius: 8px;
+            font-size: 1rem; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; flex-grow: 1;
             box-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
         }
-        
         button.btn-primary:disabled {
-            background: #555;
-            color: #888;
-            cursor: not-allowed;
-            box-shadow: none;
+            background: #555; color: #888; cursor: not-allowed; box-shadow: none;
         }
 
         /* --- COUNTDOWN & ALERTS --- */
         #overlay-message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 5rem;
-            font-weight: 900;
+            font-size: 6rem; font-weight: 900;
             text-shadow: 0 0 20px black;
-            pointer-events: none;
-            display: none;
+            pointer-events: none; display: none;
             z-index: 200;
         }
         
         /* --- WINNER MODAL --- */
         #winner-modal {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.85);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 300;
-            display: none; /* Hidden by default */
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 300; display: none;
             backdrop-filter: blur(5px);
         }
 
-        #winner-modal h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            color: var(--neon-green);
-            text-shadow: 0 0 20px var(--neon-green);
-        }
-
-        #payout-info { font-size: 1.5rem; margin-bottom: 30px; }
+        #winner-modal h1 { font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px currentColor; }
+        #payout-info { font-size: 1.5rem; margin-bottom: 30px; text-align: center; line-height: 1.5; }
         
         .btn-restart {
-            background: white;
-            color: black;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
+            background: white; color: black; border: none;
+            padding: 15px 40px; font-size: 1.2rem;
+            font-weight: bold; border-radius: 50px; cursor: pointer;
+            transition: transform 0.2s;
         }
+        .btn-restart:hover { transform: scale(1.05); }
 
     </style>
 </head>
-<body class="background-container">
+<body>
 
-<div id="game-container" >
-    
+<div id="game-container" class="background-container">
+    <canvas id="confetti-canvas"></canvas>
     <div id="finish-label">Finish Line</div>
     <div id="finish-line"></div>
 
     <div id="ui-layer">
         <div id="hud">
-            <div style="font-weight:900; letter-spacing:1px;">TWO FLIES 🪰</div>
+            <div id="sound-toggle" onclick="toggleSound()">🔇</div>
             <div class="bankroll">BANK: $<span id="bank-val">100.00</span></div>
         </div>
 
@@ -353,7 +319,6 @@
             <div class="card-container">
                 <div class="fly-card" id="card-1" onclick="selectFly(1)">
                     <div style="font-size:2rem;">🪰</div>
-
                     <div>Marty McFly</div>
                     <span class="odds-display" id="odds-1">1.90</span>
                 </div>
@@ -387,6 +352,194 @@
 </div>
 
 <script>
+    // --- AUDIO SYSTEM (Web Audio API) ---
+    const AudioEngine = {
+        ctx: null,
+        isMuted: true, // Start muted by default to respect browser policies
+        buzzOsc1: null,
+        buzzOsc2: null,
+        buzzGain: null,
+
+        init: function() {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        },
+
+        toggle: function() {
+            this.init();
+            this.isMuted = !this.isMuted;
+            const btn = document.getElementById('sound-toggle');
+            btn.innerText = this.isMuted ? '🔇' : '🔊';
+            return this.isMuted;
+        },
+
+        playTone: function(freq, type, duration, vol=0.1) {
+            if(this.isMuted || !this.ctx) return;
+            
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            
+            gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+            
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+        },
+
+        playCountdown: function(isGo) {
+            if (isGo) {
+                // High pitch for GO
+                this.playTone(880, 'square', 0.6, 0.15);
+            } else {
+                // Low pitch for numbers
+                this.playTone(440, 'triangle', 0.3, 0.1);
+            }
+        },
+
+        playWin: function(isWin) {
+            if(this.isMuted || !this.ctx) return;
+            // Arpeggio
+            const now = this.ctx.currentTime;
+            const type = isWin ? 'triangle' : 'sawtooth';
+            const notes = isWin ? [523.25, 659.25, 783.99, 1046.50] : [300, 250, 200]; // C Major vs descending
+            
+            notes.forEach((freq, i) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.1, now + (i * 0.1));
+                gain.gain.linearRampToValueAtTime(0, now + (i * 0.1) + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + (i * 0.1));
+                osc.stop(now + (i * 0.1) + 0.4);
+            });
+        },
+
+        startBuzz: function() {
+            if(this.isMuted || !this.ctx) return;
+
+            // Create two oscillators for a dissonant, buzzing sound
+            this.buzzOsc1 = this.ctx.createOscillator();
+            this.buzzOsc2 = this.ctx.createOscillator();
+            this.buzzGain = this.ctx.createGain();
+
+            this.buzzOsc1.type = 'sawtooth';
+            this.buzzOsc2.type = 'sawtooth';
+
+            // Base frequencies (Fly buzzing is around 200Hz)
+            this.buzzOsc1.frequency.value = 170;
+            this.buzzOsc2.frequency.value = 180; // Slight detune for "beating" effect
+
+            this.buzzGain.gain.value = 0.01;
+
+            // LFO to wobble the pitch slightly
+            const lfo = this.ctx.createOscillator();
+            lfo.frequency.value = 22; // 8Hz wobble
+            const lfoGain = this.ctx.createGain();
+            lfoGain.gain.value = 1; // Strength of wobble
+
+            lfo.connect(lfoGain);
+            lfoGain.connect(this.buzzOsc1.frequency);
+
+            this.buzzOsc1.connect(this.buzzGain);
+            this.buzzOsc2.connect(this.buzzGain);
+            this.buzzGain.connect(this.ctx.destination);
+
+            this.buzzOsc1.start();
+            this.buzzOsc2.start();
+            lfo.start();
+        },
+
+        stopBuzz: function() {
+            if (this.buzzGain) {
+                // Fade out to avoid clicking
+                this.buzzGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
+            }
+            if (this.buzzOsc1) {
+                setTimeout(() => {
+                    this.buzzOsc1.stop();
+                    this.buzzOsc2.stop();
+                    this.buzzOsc1 = null;
+                }, 200);
+            }
+        }
+    };
+
+    // --- CONFETTI SYSTEM (Canvas) ---
+    const Confetti = {
+        canvas: document.getElementById('confetti-canvas'),
+        ctx: document.getElementById('confetti-canvas').getContext('2d'),
+        particles: [],
+        isActive: false,
+
+        resize: function() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+        },
+
+        start: function() {
+            this.resize();
+            this.isActive = true;
+            this.particles = [];
+            const colors = ['#39ff14', '#ff0000', '#00ffff', '#ffff00', '#ff00ff'];
+            
+            for(let i=0; i<150; i++) {
+                this.particles.push({
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height - this.canvas.height, // Start above
+                    w: Math.random() * 10 + 5,
+                    h: Math.random() * 10 + 5,
+                    dx: Math.random() * 4 - 2,
+                    dy: Math.random() * 5 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    tilt: Math.random() * 10,
+                    tiltAngle: Math.random()
+                });
+            }
+            this.animate();
+        },
+
+        stop: function() {
+            this.isActive = false;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        },
+
+        animate: function() {
+            if(!this.isActive) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            
+            this.particles.forEach(p => {
+                p.tiltAngle += 0.1;
+                p.y += p.dy;
+                p.x += Math.sin(p.tiltAngle) * 2;
+
+                this.ctx.fillStyle = p.color;
+                this.ctx.beginPath();
+                this.ctx.rect(p.x, p.y, p.w, p.h);
+                this.ctx.fill();
+
+                // Recycle particles
+                if(p.y > this.canvas.height) {
+                    p.y = -20;
+                    p.x = Math.random() * this.canvas.width;
+                }
+            });
+            requestAnimationFrame(() => this.animate());
+        }
+    };
+
     // --- STATE VARIABLES ---
     let bankroll = 100.00;
     let selectedFly = null;
@@ -412,23 +565,20 @@
     updateBankDisplay();
     startOddsSimulation();
 
-    // --- ODDS SIMULATION ---
-    // Makes the market feel "live" by subtly changing odds before the race
+    // --- LOGIC ---
+
+    function toggleSound() {
+        AudioEngine.toggle();
+    }
+
     function startOddsSimulation() {
         oddsInterval = setInterval(() => {
             if(isRacing) return;
-
-            // Random subtle shift
             const shift = (Math.random() - 0.5) * 0.1;
-            
-            // Keep odds realistic (between 1.5 and 3.0)
             let newOdds1 = Math.max(1.5, Math.min(3.0, odds1 - shift));
             let newOdds2 = Math.max(1.5, Math.min(3.0, odds2 + shift));
-
-            // Visual indicator for change
             updateOddsDisplay(elOdds1, odds1, newOdds1);
             updateOddsDisplay(elOdds2, odds2, newOdds2);
-
             odds1 = newOdds1;
             odds2 = newOdds2;
         }, 1500);
@@ -437,67 +587,56 @@
     function updateOddsDisplay(element, oldVal, newVal) {
         element.innerText = newVal.toFixed(2);
         element.className = 'odds-display ' + (newVal > oldVal ? 'odds-up' : 'odds-down');
-        // Reset color after a moment
         setTimeout(() => element.className = 'odds-display', 500);
     }
 
-    // --- USER ACTIONS ---
     function selectFly(id) {
         if(isRacing) return;
-        selectedFly = id;
         
-        // UI Update
+        // Init Audio Context on first interaction
+        AudioEngine.init();
+
+        selectedFly = id;
         document.querySelectorAll('.fly-card').forEach(c => c.classList.remove('selected'));
         document.getElementById(`card-${id}`).classList.add('selected');
-        
         statusText.innerText = `Betting on ${id === 1 ? 'Marty' : 'Buzz'}`;
         btnBet.disabled = false;
     }
 
     function placeBet() {
         const inputVal = parseFloat(document.getElementById('wager-input').value);
-        
-        if(!selectedFly) {
-            alert("Please select a fly first!");
-            return;
-        }
-        if(isNaN(inputVal) || inputVal <= 0) {
-            alert("Invalid wager amount.");
-            return;
-        }
-        if(inputVal > bankroll) {
-            alert("Insufficient funds!");
-            return;
-        }
+        if(!selectedFly) { alert("Please select a fly first!"); return; }
+        if(isNaN(inputVal) || inputVal <= 0) { alert("Invalid wager amount."); return; }
+        if(inputVal > bankroll) { alert("Insufficient funds!"); return; }
 
         wager = inputVal;
         bankroll -= wager;
         updateBankDisplay();
-        
         startRaceSequence();
     }
 
-    // --- GAME LOGIC ---
     function startRaceSequence() {
         isRacing = true;
-        clearInterval(oddsInterval); // Stop odds changing
-        
-        // Hide betting panel
+        clearInterval(oddsInterval);
         bettingPanel.classList.add('panel-hidden');
         btnBet.disabled = true;
 
-        // Countdown
         let count = 3;
         overlayMsg.style.display = 'block';
         overlayMsg.innerText = count;
         
+        AudioEngine.playCountdown(false); // First Beep
+
         const countInt = setInterval(() => {
             count--;
             if(count > 0) {
                 overlayMsg.innerText = count;
+                AudioEngine.playCountdown(false); // 2, 1 Beeps
+                overlayMsg.style.color = "white";
             } else if (count === 0) {
                 overlayMsg.innerText = "GO!";
                 overlayMsg.style.color = "var(--neon-green)";
+                AudioEngine.playCountdown(true); // GO Beep
             } else {
                 clearInterval(countInt);
                 overlayMsg.style.display = 'none';
@@ -507,40 +646,34 @@
     }
 
     function runRace() {
-        // Start buzzing animation
         fly1.classList.add('buzzing');
         fly2.classList.add('buzzing');
+        AudioEngine.startBuzz();
 
-        let pos1 = 20; // Bottom pixels
+        let pos1 = 20;
         let pos2 = 20;
-        const finishLine = document.getElementById('game-container').offsetHeight * 0.9; // 90% up height
+        const finishLine = document.getElementById('game-container').offsetHeight * 0.9;
 
         const raceInt = setInterval(() => {
-            // Movement Logic: Random bursts + consistency
-            // Fly 1 moves
+            // Movement physics
             pos1 += (Math.random() * 8) + (Math.random() > 0.9 ? 15 : 0); 
-            // Fly 2 moves
             pos2 += (Math.random() * 8) + (Math.random() > 0.9 ? 15 : 0);
-
-            // Stalling mechanism (occasional stop)
             if(Math.random() > 0.95) pos1 -= 2; 
             if(Math.random() > 0.95) pos2 -= 2;
 
-            // Apply positions
             fly1.style.bottom = pos1 + 'px';
             fly2.style.bottom = pos2 + 'px';
 
-            // Check Winner
             if (pos1 >= finishLine || pos2 >= finishLine) {
                 clearInterval(raceInt);
                 fly1.classList.remove('buzzing');
                 fly2.classList.remove('buzzing');
+                AudioEngine.stopBuzz();
                 
-                // Determine strictly who is ahead
                 const winnerId = pos1 > pos2 ? 1 : 2;
                 handleWin(winnerId);
             }
-        }, 50); // 50ms per frame = 20fps logic
+        }, 50);
     }
 
     function handleWin(winnerId) {
@@ -550,6 +683,7 @@
         let payout = 0;
         let titleText = "";
         let payoutText = "";
+        let titleColor = "";
 
         if (playerWon) {
             const finalOdds = (winnerId === 1) ? odds1 : odds2;
@@ -557,16 +691,20 @@
             bankroll += payout;
             titleText = "YOU WON!";
             payoutText = `${winnerName} takes it! <br> Payout: $${payout.toFixed(2)}`;
-            document.getElementById('winner-title').style.color = "var(--neon-green)";
+            titleColor = "var(--neon-green)";
+            Confetti.start(); // CONFETTI TRIGGER
+            AudioEngine.playWin(true);
         } else {
             titleText = "YOU LOST";
             payoutText = `${winnerName} takes it. <br> Better luck next time.`;
-            document.getElementById('winner-title').style.color = "var(--neon-red)";
+            titleColor = "var(--neon-red)";
+            AudioEngine.playWin(false);
         }
 
-        // Show Modal
         setTimeout(() => {
-            document.getElementById('winner-title').innerText = titleText;
+            const t = document.getElementById('winner-title');
+            t.innerText = titleText;
+            t.style.color = titleColor;
             document.getElementById('payout-info').innerHTML = payoutText;
             modal.style.display = 'flex';
             updateBankDisplay();
@@ -574,25 +712,19 @@
     }
 
     function resetGame() {
+        Confetti.stop();
         modal.style.display = 'none';
-        
-        // Reset Positions
         fly1.style.bottom = '20px';
         fly2.style.bottom = '20px';
-        
-        // Reset Logic
         isRacing = false;
         selectedFly = null;
         wager = 0;
         document.querySelectorAll('.fly-card').forEach(c => c.classList.remove('selected'));
         statusText.innerText = "Select a fly to start";
-        
-        // Show Betting Panel
         bettingPanel.classList.remove('panel-hidden');
         
-        // Check for Game Over (Bankrupt)
         if(bankroll < 1) {
-            alert("You are bankrupt! Adding stimulus check of $100.");
+            alert("You are bankrupt! Stimulus check: $100.");
             bankroll = 100;
             updateBankDisplay();
         }
