@@ -11,7 +11,7 @@
             --neon-red: #ff073a;
             --glass-bg: rgba(20, 20, 20, 0.85);
             --wall-color: #e0e0e0;
-            --buzz-spped: 0.08s
+            --buzz-speed: 0.08s
         }
 
         body {
@@ -127,7 +127,7 @@
         #lane-2 { right: 0; }
 
         .fly {
-            font-size: 4rem; 
+            font-size: 2.5rem; 
             position: absolute;
             bottom: 20px; 
             transition: bottom 0.1s linear, transform 0.05s ease;
@@ -323,12 +323,12 @@
             <h2>Place Your Bet</h2>
             <div class="card-container">
                 <div class="fly-card" id="card-1" onclick="selectFly(1)">
-                    <div class="fly-avatar">🪰</div>
+                    <div class="fly-avatar buzzing">🪰</div>
                     <div class="fly-title">Marty McFly</div>
                     <span class="odds-display" id="odds-1">1.90</span>
                 </div>
                 <div class="fly-card" id="card-2" onclick="selectFly(2)">
-                    <div class="fly-avatar" style="filter: hue-rotate(90deg);">🪰</div>
+                    <div class="fly-avatar buzzing" style="filter: hue-rotate(90deg);">🪰</div>
                     <div class="fly-title">Buzz Aldrin</div>
                     <span class="odds-display" id="odds-2">1.90</span>
                 </div>
