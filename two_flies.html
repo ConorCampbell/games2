@@ -661,10 +661,10 @@
 
         const raceInt = setInterval(() => {
             // Movement physics
-            pos1 += (Math.random() * 8) + (Math.random() > 0.9 ? 15 : 0); 
-            pos2 += (Math.random() * 8) + (Math.random() > 0.9 ? 15 : 0);
-            if(Math.random() > 0.95) pos1 -= 2; 
-            if(Math.random() > 0.95) pos2 -= 2;
+            pos1 += (Math.random() * 4) + (Math.random() > 0.9 ? 25 * Math.random() : 0); 
+            pos2 += (Math.random() * 4) + (Math.random() > 0.9 ? 25 * Math.random() : 0);
+            if(Math.random() > 0.95) pos1 -= 4 * Math.random(); 
+            if(Math.random() > 0.95) pos2 -= 4 * Math.random();
 
             fly1.style.bottom = pos1 + 'px';
             fly2.style.bottom = pos2 + 'px';
