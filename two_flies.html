@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two Flies: High Stakes Racing</title>
+    <style>
+        /* --- RESET & BASICS --- */
+        :root {
+            --neon-green: #39ff14;
+            --neon-red: #ff073a;
+            --glass-bg: rgba(20, 20, 20, 0.85);
+            --wall-color: #e0e0e0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* --- THE WALL (Game Board) --- */
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4)),
+                url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.4"/></svg>'),
+                #d3d3d3; /* Fallback / Base wall color */
+            background-size: cover, 200px 200px, cover;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        /* --- FINISH LINE --- */
+        #finish-line {
+            position: absolute;
+            top: 10%;
+            width: 100%;
+            height: 20px;
+            background: repeating-linear-gradient(
+                45deg,
+                #ffcc00,
+                #ffcc00 10px,
+                #000 10px,
+                #000 20px
+            );
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            z-index: 1;
+        }
+
+        #finish-label {
+            position: absolute;
+            top: 7%;
+            width: 100%;
+            text-align: center;
+            font-weight: 900;
+            color: rgba(0,0,0,0.5);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            font-size: 1.5rem;
+        }
+
+        /* --- THE FLIES --- */
+        .fly-lane {
+            position: absolute;
+            bottom: 0;
+            top: 0;
+            width: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end; /* Start at bottom */
+        }
+        
+        #lane-1 { left: 0; border-right: 1px dashed rgba(0,0,0,0.1); }
+        #lane-2 { right: 0; }
+
+        .fly {
+            font-size: 4rem; /* High Def Vector scaling */
+            position: absolute;
+            bottom: 20px; /* Starting position */
+            transition: bottom 0.1s linear, transform 0.05s ease;
+            filter: drop-shadow(5px 10px 4px rgba(0,0,0,0.4));
+            z-index: 10;
+        }
+
+        .fly-name {
+            position: absolute;
+            bottom: -30px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #333;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+
+        /* Animation for buzzing */
+        @keyframes buzz {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+
+        .buzzing {
+            animation: buzz 0.1s infinite;
+        }
+
+        /* --- UI OVERLAY --- */
+        #ui-layer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Let clicks pass through to game logic if needed */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            z-index: 100;
+        }
+
+        /* Header HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+        }
+
+        .bankroll {
+            background: rgba(0,0,0,0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid #444;
+            font-weight: bold;
+            color: var(--neon-green);
+        }
+
+        /* Betting Panel */
+        #betting-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding: 20px;
+            pointer-events: all;
+            border-radius: 20px 20px 0 0;
+            transition: transform 0.3s ease;
+        }
+
+        .panel-hidden {
+            transform: translateY(110%);
+        }
+
+        h2 { margin: 0 0 15px 0; font-size: 1.2rem; text-transform: uppercase; color: #aaa; text-align: center;}
+
+        .card-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .fly-card {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .fly-card:hover { background: rgba(255,255,255,0.1); }
+        .fly-card.selected {
+            border-color: var(--neon-green);
+            background: rgba(57, 255, 20, 0.1);
+        }
+
+        .odds-display {
+            font-size: 1.5rem;
+            font-weight: 800;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .odds-up { color: var(--neon-green); }
+        .odds-down { color: var(--neon-red); }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="number"] {
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 80px;
+            text-align: center;
+        }
+
+        button.btn-primary {
+            background: var(--neon-green);
+            color: black;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            flex-grow: 1;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.4);
+        }
+        
+        button.btn-primary:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* --- COUNTDOWN & ALERTS --- */
+        #overlay-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px black;
+            pointer-events: none;
+            display: none;
+            z-index: 200;
+        }
+        
+        /* --- WINNER MODAL --- */
+        #winner-modal {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            display: none; /* Hidden by default */
+            backdrop-filter: blur(5px);
+        }
+
+        #winner-modal h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: var(--neon-green);
+            text-shadow: 0 0 20px var(--neon-green);
+        }
+
+        #payout-info { font-size: 1.5rem; margin-bottom: 30px; }
+        
+        .btn-restart {
+            background: white;
+            color: black;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="finish-label">Finish Line</div>
+    <div id="finish-line"></div>
+
+    <div id="ui-layer">
+        <div id="hud">
+            <div style="font-weight:900; letter-spacing:1px;">TWO FLIES 🪰</div>
+            <div class="bankroll">BANK: $<span id="bank-val">100.00</span></div>
+        </div>
+
+        <div id="overlay-message">3</div>
+
+        <div id="betting-panel">
+            <h2>Place Your Bet</h2>
+            <div class="card-container">
+                <div class="fly-card" id="card-1" onclick="selectFly(1)">
+                    <div style="font-size:2rem;">🪰</div>
+                    
+                    <div>Marty McFly</div>
+                    <span class="odds-display" id="odds-1">1.90</span>
+                </div>
+                <div class="fly-card" id="card-2" onclick="selectFly(2)">
+                    <div style="font-size:2rem; filter: hue-rotate(90deg);">🪰</div>
+                    <div>Buzz Aldrin</div>
+                    <span class="odds-display" id="odds-2">1.90</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <input type="number" id="wager-input" value="10" min="1" max="1000">
+                <button id="btn-place-bet" class="btn-primary" onclick="placeBet()">LOCK BET & RACE</button>
+            </div>
+            <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:#666;" id="status-text">Select a fly to start</div>
+        </div>
+    </div>
+
+    <div id="winner-modal">
+        <h1 id="winner-title">WINNER!</h1>
+        <div id="payout-info">You won $0.00</div>
+        <button class="btn-restart" onclick="resetGame()">RACE AGAIN</button>
+    </div>
+
+    <div class="fly-lane" id="lane-1">
+        <div class="fly" id="fly-1">🪰<div class="fly-name">Marty</div></div>
+    </div>
+    <div class="fly-lane" id="lane-2">
+        <div class="fly" id="fly-2" style="filter: drop-shadow(5px 10px 4px rgba(0,0,0,0.4)) hue-rotate(90deg);">🪰<div class="fly-name">Buzz</div></div>
+    </div>
+</div>
+
+<script>
+    // --- STATE VARIABLES ---
+    let bankroll = 100.00;
+    let selectedFly = null;
+    let odds1 = 1.90;
+    let odds2 = 1.90;
+    let wager = 0;
+    let isRacing = false;
+    let oddsInterval;
+
+    // DOM Elements
+    const fly1 = document.getElementById('fly-1');
+    const fly2 = document.getElementById('fly-2');
+    const elOdds1 = document.getElementById('odds-1');
+    const elOdds2 = document.getElementById('odds-2');
+    const elBank = document.getElementById('bank-val');
+    const btnBet = document.getElementById('btn-place-bet');
+    const bettingPanel = document.getElementById('betting-panel');
+    const overlayMsg = document.getElementById('overlay-message');
+    const modal = document.getElementById('winner-modal');
+    const statusText = document.getElementById('status-text');
+
+    // --- INITIALIZATION ---
+    updateBankDisplay();
+    startOddsSimulation();
+
+    // --- ODDS SIMULATION ---
+    // Makes the market feel "live" by subtly changing odds before the race
+    function startOddsSimulation() {
+        oddsInterval = setInterval(() => {
+            if(isRacing) return;
+
+            // Random subtle shift
+            const shift = (Math.random() - 0.5) * 0.1;
+            
+            // Keep odds realistic (between 1.5 and 3.0)
+            let newOdds1 = Math.max(1.5, Math.min(3.0, odds1 - shift));
+            let newOdds2 = Math.max(1.5, Math.min(3.0, odds2 + shift));
+
+            // Visual indicator for change
+            updateOddsDisplay(elOdds1, odds1, newOdds1);
+            updateOddsDisplay(elOdds2, odds2, newOdds2);
+
+            odds1 = newOdds1;
+            odds2 = newOdds2;
+        }, 1500);
+    }
+
+    function updateOddsDisplay(element, oldVal, newVal) {
+        element.innerText = newVal.toFixed(2);
+        element.className = 'odds-display ' + (newVal > oldVal ? 'odds-up' : 'odds-down');
+        // Reset color after a moment
+        setTimeout(() => element.className = 'odds-display', 500);
+    }
+
+    // --- USER ACTIONS ---
+    function selectFly(id) {
+        if(isRacing) return;
+        selectedFly = id;
+        
+        // UI Update
+        document.querySelectorAll('.fly-card').forEach(c => c.classList.remove('selected'));
+        document.getElementById(`card-${id}`).classList.add('selected');
+        
+        statusText.innerText = `Betting on ${id === 1 ? 'Marty' : 'Buzz'}`;
+        btnBet.disabled = false;
+    }
+
+    function placeBet() {
+        const inputVal = parseFloat(document.getElementById('wager-input').value);
+        
+        if(!selectedFly) {
+            alert("Please select a fly first!");
+            return;
+        }
+        if(isNaN(inputVal) || inputVal <= 0) {
+            alert("Invalid wager amount.");
+            return;
+        }
+        if(inputVal > bankroll) {
+            alert("Insufficient funds!");
+            return;
+        }
+
+        wager = inputVal;
+        bankroll -= wager;
+        updateBankDisplay();
+        
+        startRaceSequence();
+    }
+
+    // --- GAME LOGIC ---
+    function startRaceSequence() {
+        isRacing = true;
+        clearInterval(oddsInterval); // Stop odds changing
+        
+        // Hide betting panel
+        bettingPanel.classList.add('panel-hidden');
+        btnBet.disabled = true;
+
+        // Countdown
+        let count = 3;
+        overlayMsg.style.display = 'block';
+        overlayMsg.innerText = count;
+        
+        const countInt = setInterval(() => {
+            count--;
+            if(count > 0) {
+                overlayMsg.innerText = count;
+            } else if (count === 0) {
+                overlayMsg.innerText = "GO!";
+                overlayMsg.style.color = "var(--neon-green)";
+            } else {
+                clearInterval(countInt);
+                overlayMsg.style.display = 'none';
+                runRace();
+            }
+        }, 800);
+    }
+
+    function runRace() {
+        // Start buzzing animation
+        fly1.classList.add('buzzing');
+        fly2.classList.add('buzzing');
+
+        let pos1 = 20; // Bottom pixels
+        let pos2 = 20;
+        const finishLine = document.getElementById('game-container').offsetHeight * 0.9; // 90% up height
+
+        const raceInt = setInterval(() => {
+            // Movement Logic: Random bursts + consistency
+            // Fly 1 moves
+            pos1 += (Math.random() * 8) + (Math.random() > 0.9 ? 15 : 0); 
+            // Fly 2 moves
+            pos2 += (Math.random() * 8) + (Math.random() > 0.9 ? 15 : 0);
+
+            // Stalling mechanism (occasional stop)
+            if(Math.random() > 0.95) pos1 -= 2; 
+            if(Math.random() > 0.95) pos2 -= 2;
+
+            // Apply positions
+            fly1.style.bottom = pos1 + 'px';
+            fly2.style.bottom = pos2 + 'px';
+
+            // Check Winner
+            if (pos1 >= finishLine || pos2 >= finishLine) {
+                clearInterval(raceInt);
+                fly1.classList.remove('buzzing');
+                fly2.classList.remove('buzzing');
+                
+                // Determine strictly who is ahead
+                const winnerId = pos1 > pos2 ? 1 : 2;
+                handleWin(winnerId);
+            }
+        }, 50); // 50ms per frame = 20fps logic
+    }
+
+    function handleWin(winnerId) {
+        const winnerName = winnerId === 1 ? "MARTY MCFLY" : "BUZZ ALDRIN";
+        const playerWon = (winnerId === selectedFly);
+        
+        let payout = 0;
+        let titleText = "";
+        let payoutText = "";
+
+        if (playerWon) {
+            const finalOdds = (winnerId === 1) ? odds1 : odds2;
+            payout = wager * finalOdds;
+            bankroll += payout;
+            titleText = "YOU WON!";
+            payoutText = `${winnerName} takes it! <br> Payout: $${payout.toFixed(2)}`;
+            document.getElementById('winner-title').style.color = "var(--neon-green)";
+        } else {
+            titleText = "YOU LOST";
+            payoutText = `${winnerName} takes it. <br> Better luck next time.`;
+            document.getElementById('winner-title').style.color = "var(--neon-red)";
+        }
+
+        // Show Modal
+        setTimeout(() => {
+            document.getElementById('winner-title').innerText = titleText;
+            document.getElementById('payout-info').innerHTML = payoutText;
+            modal.style.display = 'flex';
+            updateBankDisplay();
+        }, 500);
+    }
+
+    function resetGame() {
+        modal.style.display = 'none';
+        
+        // Reset Positions
+        fly1.style.bottom = '20px';
+        fly2.style.bottom = '20px';
+        
+        // Reset Logic
+        isRacing = false;
+        selectedFly = null;
+        wager = 0;
+        document.querySelectorAll('.fly-card').forEach(c => c.classList.remove('selected'));
+        statusText.innerText = "Select a fly to start";
+        
+        // Show Betting Panel
+        bettingPanel.classList.remove('panel-hidden');
+        
+        // Check for Game Over (Bankrupt)
+        if(bankroll < 1) {
+            alert("You are bankrupt! Adding stimulus check of $100.");
+            bankroll = 100;
+            updateBankDisplay();
+        }
+
+        startOddsSimulation();
+    }
+
+    function updateBankDisplay() {
+        elBank.innerText = bankroll.toFixed(2);
+    }
+</script>
+
+</body>
+</html>
