@@ -11,7 +11,7 @@
             --neon-red: #ff073a;
             --glass-bg: rgba(20, 20, 20, 0.85);
             --wall-color: #e0e0e0;
-            --buzz-speed: 0.08s
+            --buzz-speed: 0.08s;
         }
 
         body {
@@ -75,7 +75,7 @@
             height: 100%;
             background: 
                 linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4)),
-                url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.4"/></svg>'),
+                url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="[...]
                 #d3d3d3; 
             background-size: cover, 200px 200px, cover;
             box-shadow: 0 0 50px rgba(0,0,0,0.8);
@@ -155,7 +155,8 @@
             75% { transform: translate(2px, 1px) rotate(-2deg); }
             100% { transform: translate(0px, -2px) rotate(0deg); }
         }
-        .buzzing { animation: buzz var(--buzz-speed) infinite; }
+        /* Use the element-level --buzz-speed if set, otherwise fall back to the root value */
+        .buzzing { animation: buzz var(--buzz-speed, 0.08s) infinite; }
 
         /* --- UI OVERLAY --- */
         #ui-layer {
@@ -659,6 +660,14 @@
         let pos2 = 20;
         const finishLine = document.getElementById('game-container').offsetHeight * 0.9;
 
+        // Helper: map position to a buzz animation duration (shorter = faster)
+        function mapBuzzDuration(pos) {
+            const ratio = Math.min(pos / finishLine, 1); // 0..1
+            // base duration range: 0.12s (slow) -> 0.02s (fast)
+            const duration = 0.12 - (ratio * 0.1);
+            return Math.max(0.02, duration).toFixed(3) + 's';
+        }
+
         const raceInt = setInterval(() => {
             // Movement physics
             pos1 += (Math.random() * 4) + (Math.random() > 0.9 ? 25 * Math.random() : 0); 
@@ -669,12 +678,20 @@
             fly1.style.bottom = pos1 + 'px';
             fly2.style.bottom = pos2 + 'px';
 
+            // Update each fly's buzz speed based on its current position (faster = quicker buzz)
+            fly1.style.setProperty('--buzz-speed', mapBuzzDuration(pos1));
+            fly2.style.setProperty('--buzz-speed', mapBuzzDuration(pos2));
+
             if (pos1 >= finishLine || pos2 >= finishLine) {
                 clearInterval(raceInt);
                 fly1.classList.remove('buzzing');
                 fly2.classList.remove('buzzing');
                 AudioEngine.stopBuzz();
                 
+                // remove inline buzz-speed so CSS falls back to default
+                fly1.style.removeProperty('--buzz-speed');
+                fly2.style.removeProperty('--buzz-speed');
+
                 const winnerId = pos1 > pos2 ? 1 : 2;
                 handleWin(winnerId);
             }
@@ -727,6 +744,10 @@
         document.querySelectorAll('.fly-card').forEach(c => c.classList.remove('selected'));
         statusText.innerText = "Select a fly to start";
         bettingPanel.classList.remove('panel-hidden');
+        
+        // ensure any inline buzz-speed variables are cleared
+        fly1.style.removeProperty('--buzz-speed');
+        fly2.style.removeProperty('--buzz-speed');
         
         if(bankroll < 1) {
             alert("You are bankrupt! Stimulus check: $100.");
