@@ -717,8 +717,8 @@
         let pos1 = 20;
         let pos2 = 20;
         
-        let x1 = 0;
-        let x2 = 0;
+        let x1 = 50;
+        let x2 = 50;
         
         const finishLine = document.getElementById('game-container').offsetHeight * 0.85;
 
@@ -727,15 +727,15 @@
             pos1 += (Math.random() * 4) + (Math.random() > 0.9 ? 25 * Math.random() : 0); 
             pos2 += (Math.random() * 4) + (Math.random() > 0.9 ? 25 * Math.random() : 0);
 
-            x1 += (Math.random() -.5) ;
-            x2 += (Math.random() -.5) ;
+            x1 += 3* (Math.random() -.5) ;
+            x2 += 3* (Math.random() -.5) ;
             
             
             if(Math.random() > 0.95) pos1 -= 4 * Math.random(); 
             if(Math.random() > 0.95) pos2 -= 4 * Math.random();
 
-            fly1.style.right = x1 + 'px';
-            fly2.style.right = x2 + 'px';
+            fly1.style.right = x1 + '%';
+            fly2.style.right = x2 + '%';
 
             fly1.style.bottom = pos1 + 'px';
             fly2.style.bottom = pos2 + 'px';
