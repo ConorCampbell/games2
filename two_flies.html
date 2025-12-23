@@ -30,25 +30,48 @@
             position: relative;
             width: 100%;
             max-width: 600px;
-            height: 100%;
-            
-            /* background: 
-                linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4)),
-                url('data:image/svg+xml;utf8,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.4"/></svg>'),
-                #d3d3d3;  */
-                
-                /* Fallback / Base wall color */
-            
-            background-color: rgba(30,30,30,0.5); /* Add semi-transparent layer for backdrop-filter */
-            backdrop-filter: blur(28px) brightness(0.7);
-            opacity: 0.55;
-            transition: opacity 0.8s;
-            background:
-                url('static/img/two-flies2.jpg') no-repeat center center/cover, 
-                linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.4)), 
-                #d3d3d3;
-
+            height: 100%;                 
+            opacity: 80%;
+            background-color: rgba(0,0,0,0.2);
         }
+
+        .background-container {
+    /* Set the container position to relative so the pseudo-element can be positioned absolutely within it */
+    position: relative;
+    height: 100vh;
+    width: 100%;    
+    /* Ensure the content is above the pseudo-element background */
+    z-index: 1; 
+    
+    /* Optional: Style the content */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-shadow: 1px 1px 3px black;
+}
+
+.background-container::before {
+    content: ""; /* Required for pseudo-elements */
+    background-image: url('static/img/two-flies2.jpg');
+    background-size: cover;
+    background-position: center;
+    
+    /* Position and size the pseudo-element to cover the container */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    
+    /* Place the pseudo-element behind the main content */
+    z-index: -1; 
+    
+    /* Apply grayscale and blur effects here */
+    filter: grayscale(50%) blur(4px);
+}
+
 
         /* --- FINISH LINE --- */
         #finish-line {
@@ -310,9 +333,9 @@
 
     </style>
 </head>
-<body>
+<body class="background-container">
 
-<div id="game-container">
+<div id="game-container" >
     
     <div id="finish-label">Finish Line</div>
     <div id="finish-line"></div>
