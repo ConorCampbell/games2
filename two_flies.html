@@ -333,43 +333,61 @@
                     <span class="odds-display" id="odds-2">1.90</span>
                 </div>
 
+
                 <svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(50, 50)">
-    <g stroke="#333" stroke-width="0.8" fill="none" opacity="0.8">
-      <path d="M-2,-15 C-5,-20 -10,-18 -14,-22" />
-      <path d="M2,-15 C5,-20 10,-18 14,-22" />
-      <path d="M-3,-5 C-8,-6 -15,-4 -18,-8" />
-      <path d="M3,-5 C8,-6 15,-4 18,-8" />
-      <path d="M-2,5 C-6,12 -12,15 -15,20" />
-      <path d="M2,5 C6,12 12,15 15,20" />
+  <g transform="translate(50, 50) scale(0.9)">
+    <g stroke="#222" stroke-width="0.8" fill="none" opacity="0.7">
+      <path d="M-3,-5 C-8,-8 -12,-5 -15,-8" />
+      <path d="M3,-5 C8,-8 12,-5 15,-8" />
+      <path d="M-3,2 C-9,4 -14,8 -16,12" />
+      <path d="M3,2 C9,4 14,8 16,12" />
+      <path d="M-2,10 C-6,15 -10,20 -12,25" />
+      <path d="M2,10 C6,15 10,20 12,25" />
     </g>
 
-    <g fill="rgba(200, 220, 240, 0.4)" stroke="#888" stroke-width="0.5" stroke-opacity="0.6">
-      <path d="M-5,-5 C-25,-15 -45,0 -40,25 C-25,15 -5,10 -5,5 Z" />
-      <path d="M5,-5 C25,-15 45,0 40,25 C25,15 5,10 5,5 Z" />
+    <g fill="#333" stroke="#111" stroke-width="0.5">
+      <ellipse cx="0" cy="12" rx="9" ry="14" fill="url(#abdomenGrad)" />
+      <ellipse cx="0" cy="-6" rx="8" ry="9" fill="url(#thoraxGrad)" />
+      <path d="M-3,-10 L-2,0 M3,-10 L2,0" stroke="#111" stroke-width="1.5" opacity="0.6"/>
+      <circle cx="0" cy="-18" r="6" fill="#444" />
     </g>
-    
+
+    <g fill="url(#eyeGrad)">
+      <circle cx="-4" cy="-19" r="3.5" />
+      <circle cx="4" cy="-19" r="3.5" />
+    </g>
+    <g stroke="#500" stroke-width="0.2" opacity="0.3" fill="none">
+      <path d="M-6,-21 C-5,-17 -3,-17 -2,-21 M6,-21 C5,-17 3,-17 2,-21"/>
+      <path d="M-7,-19 C-4,-18 -4,-20 -7,-21 M7,-19 C4,-18 4,-20 7,-21"/>
+    </g>
+
+    <g fill="rgba(220, 235, 255, 0.3)" stroke="#777" stroke-width="0.4">
+      <path d="M-4,-8 C-12,-20 -18,-5 -12,25 C-8,28 -2,25 -2,15 C-2,5 -3,0 -4,-8 Z" />
+      <path d="M4,-8 C12,-20 18,-5 12,25 C8,28 2,25 2,15 C2,5 3,0 4,-8 Z" />
+    </g>
     <g stroke="#666" stroke-width="0.3" fill="none" opacity="0.5">
-      <path d="M-7,-3 C-15,-8 -30,-2 -35,15" />
-      <path d="M-7,0 C-12,5 -20,10 -28,20" />
-      <path d="M7,-3 C15,-8 30,-2 35,15" />
-      <path d="M7,0 C12,5 20,10 28,20" />
-    </g>
-
-    <g fill="#444" stroke="#222" stroke-width="0.5">
-      <ellipse cx="0" cy="15" rx="8" ry="12" fill="#554d44" />
-      <ellipse cx="0" cy="-4" rx="7" ry="8" fill="#333" />
-      <path d="M-2,-8 L-2,2 M2,-8 L2,2" stroke="#222" stroke-width="1.2" opacity="0.5" />
-      <circle cx="0" cy="-16" r="5" fill="#444" />
-    </g>
-
-    <g fill="#8b3a3a">
-      <circle cx="-3.5" cy="-17" r="2.5" />
-      <circle cx="3.5" cy="-17" r="2.5" />
+      <path d="M-5,-6 C-10,5 -10,20 -8,26" />
+      <path d="M5,-6 C10,5 10,20 8,26" />
     </g>
     
-    <path d="M-1,-21 L-0.5,-23 M1,-21 L0.5,-23" stroke="#333" stroke-width="0.5" />
+    <path d="M-1,-23 L-1.5,-26 M1,-23 L1.5,-26" stroke="#333" stroke-width="0.6" />
   </g>
+
+  <defs>
+    <radialGradient id="thoraxGrad" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.3">
+      <stop offset="0%" stop-color="#666" />
+      <stop offset="100%" stop-color="#222" />
+    </radialGradient>
+    <radialGradient id="abdomenGrad" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+      <stop offset="0%" stop-color="#776a5c" />
+      <stop offset="100%" stop-color="#443d35" />
+    </radialGradient>
+    <radialGradient id="eyeGrad" cx="0.5" cy="0.5" r="0.6" fx="0.3" fy="0.3">
+      <stop offset="0%" stop-color="#a54" />
+      <stop offset="80%" stop-color="#622" />
+      <stop offset="100%" stop-color="#411" />
+    </radialGradient>
+  </defs>
 </svg>
 
                 
