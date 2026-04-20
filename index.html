@@ -45,8 +45,74 @@ const mySounds = {
         poly: new Tone.PolySynth(Tone.Synth).toDestination()
     },
 
+    // New variations for your library object
+
+    
     // Definitions for 15+ game sounds
     library: {
+
+        // --- SHOOT VARIATIONS ---
+    shoot_retro: () => {
+        // Classic 8-bit 'peu' sound using a triangle wave
+        const synth = new Tone.Synth({oscillator: {type: "triangle"}}).toDestination();
+        synth.triggerAttackRelease("E4", "32n");
+        synth.frequency.rampTo("C2", 0.05);
+    },
+    shoot_plasma: () => {
+        // High-pitched FM zap
+        mySounds.synths.fm.set({ modulationIndex: 10, harmonicity: 3 });
+        mySounds.synths.fm.triggerAttackRelease("A5", "32n");
+        mySounds.synths.fm.frequency.rampTo("G2", 0.08);
+    },
+    shoot_heavy: () => {
+        // Short burst of noise combined with a low frequency drop
+        mySounds.synths.noise.triggerAttackRelease("64n");
+        mySounds.synths.osc.triggerAttackRelease("C3", "16n", undefined, 5);
+        mySounds.synths.osc.frequency.rampTo("C1", 0.1);
+    },
+
+    // --- LASER VARIATIONS ---
+    laser_scifi: () => {
+        // A "wobble" laser using FM modulation
+        mySounds.synths.fm.triggerAttackRelease("C6", "8n");
+        mySounds.synths.fm.modulationIndex.rampTo(50, 0.1);
+        mySounds.synths.fm.frequency.exponentialRampTo("C4", 0.1);
+    },
+    laser_ricochet: () => {
+        // Fast upward sweep followed by a drop
+        mySounds.synths.osc.triggerAttackRelease("C4", "32n");
+        mySounds.synths.osc.frequency.setValueAtTime("C4", Tone.now());
+        mySounds.synths.osc.frequency.linearRampToValueAtTime("C7", Tone.now() + 0.02);
+        mySounds.synths.osc.frequency.linearRampToValueAtTime("C3", Tone.now() + 0.1);
+    },
+    laser_burst: () => {
+        // Pulsing high-freq amplitude modulation
+        mySounds.synths.am.triggerAttackRelease("G5", "16n");
+        mySounds.synths.am.frequency.rampTo("A6", 0.05);
+    },
+
+    // --- EXPLOSION VARIATIONS ---
+    explosion_distorted: () => {
+        // Uses "Brown" noise (bassier) with a slower decay
+        const boom = new Tone.NoiseSynth({
+            noise: { type: "brown" },
+            envelope: { attack: 0.01, decay: 1.5, sustain: 0 }
+        }).toDestination();
+        boom.triggerAttackRelease("2n");
+    },
+    explosion_shatter: () => {
+        // High-pass noise for a metallic/glassy explosion
+        const filter = new Tone.Filter(2000, "highpass").toDestination();
+        const noise = new Tone.NoiseSynth().connect(filter);
+        noise.triggerAttackRelease("4n");
+    },
+    explosion_impact: () => {
+        // A heavy "thud" using a fundamental sine wave + white noise
+        mySounds.synths.osc.set({oscillator: {type: "sine"}});
+        mySounds.synths.osc.triggerAttackRelease("A1", "4n");
+        mySounds.synths.noise.triggerAttackRelease("16n");
+    }
+        
         shoot: () => mySounds.synths.osc.triggerAttackRelease("G4", "16n", undefined, -10).frequency.rampTo("C2", 0.1),
         laser: () => mySounds.synths.fm.triggerAttackRelease("C6", "32n").frequency.rampTo("G3", 0.05),
         jump: () => mySounds.synths.osc.triggerAttackRelease("A3", "16n").frequency.rampTo("A5", 0.1),
