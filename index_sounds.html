@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tone.js Game Sound Library</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 50px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; max-width: 800px; margin: 40px auto; }
+        button { 
+            padding: 15px; cursor: pointer; border: none; border-radius: 5px; 
+            background: #3498db; color: white; font-weight: bold; transition: 0.2s;
+        }
+        button:hover { background: #2980b9; transform: scale(1.05); }
+        button:active { transform: scale(0.95); }
+        .master-btn { background: #2ecc71; padding: 20px 40px; font-size: 1.2em; margin-bottom: 20px; }
+        .master-btn:hover { background: #27ae60; }
+        p { opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <h1>Game Sound Library</h1>
+    <p>Procedural Audio with Tone.js</p>
+    
+    <button class="master-btn" onclick="startAudio()">1. Start Audio Context</button>
+    
+    <div class="grid" id="buttonGrid">
+        </div>
+
+    <script>
+        // INSERT THE gameAudio.js CODE HERE
+        // (I am referencing the 'mySounds' object created above)
+
+const mySounds = {
+    // Internal synths for different types of sounds
+    synths: {
+        osc: new Tone.Synth().toDestination(),
+        fm: new Tone.FMSynth().toDestination(),
+        am: new Tone.AMSynth().toDestination(),
+        noise: new Tone.NoiseSynth({
+            noise: { type: "white" },
+            envelope: { attack: 0.005, decay: 0.1, sustain: 0 }
+        }).toDestination(),
+        poly: new Tone.PolySynth(Tone.Synth).toDestination()
+    },
+
+    // Definitions for 15+ game sounds
+    library: {
+        shoot: () => mySounds.synths.osc.triggerAttackRelease("G4", "16n", undefined, -10).frequency.rampTo("C2", 0.1),
+        laser: () => mySounds.synths.fm.triggerAttackRelease("C6", "32n").frequency.rampTo("G3", 0.05),
+        jump: () => mySounds.synths.osc.triggerAttackRelease("A3", "16n").frequency.rampTo("A5", 0.1),
+        coin: () => {
+            mySounds.synths.osc.triggerAttackRelease("B5", "16n");
+            setTimeout(() => mySounds.synths.osc.triggerAttackRelease("E6", "8n"), 100);
+        },
+        explosion: () => {
+            const noise = new Tone.NoiseSynth({ noise: { type: "brown" }, envelope: { decay: 0.8 } }).toDestination();
+            noise.triggerAttackRelease("4n");
+        },
+        hurt: () => mySounds.synths.am.triggerAttackRelease("G2", "8n").frequency.rampTo("C1", 0.1),
+        powerup: () => {
+            const now = Tone.now();
+            mySounds.synths.osc.triggerAttackRelease("C4", "16n", now);
+            mySounds.synths.osc.triggerAttackRelease("E4", "16n", now + 0.1);
+            mySounds.synths.osc.triggerAttackRelease("G4", "16n", now + 0.2);
+            mySounds.synths.osc.triggerAttackRelease("C5", "8n", now + 0.3);
+        },
+        win1: () => mySounds.synths.poly.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n"),
+        lose: () => mySounds.synths.poly.triggerAttackRelease(["C3", "Eb3", "Ab2"], "2n").gray = true,
+        levelup: () => mySounds.synths.fm.triggerAttackRelease("C5", "8n").frequency.exponentialRampTo("C6", 0.5),
+        click: () => mySounds.synths.osc.triggerAttackRelease("C6", "64n"),
+        bounce: () => mySounds.synths.osc.triggerAttackRelease("G3", "16n").frequency.rampTo("G4", 0.05).rampTo("G3", 0.05),
+        teleport: () => mySounds.synths.fm.triggerAttackRelease("C3", "2n").modulationIndex.rampTo(50, 0.5),
+        footstep: () => {
+            mySounds.synths.noise.envelope.decay = 0.05;
+            mySounds.synths.noise.triggerAttackRelease("32n");
+        },
+        magic: () => {
+            const now = Tone.now();
+            ["C6", "E6", "G6", "B6"].forEach((note, i) => {
+                mySounds.synths.am.triggerAttackRelease(note, "32n", now + i * 0.05);
+            });
+        },
+        alarm: () => mySounds.synths.osc.triggerAttackRelease("C5", "8n", undefined).frequency.rampTo("C6", 0.2),
+        ui_back: () => mySounds.synths.osc.triggerAttackRelease("G4", "32n").frequency.rampTo("C4", 0.1),
+        stomp: () => mySounds.synths.am.triggerAttackRelease("F2", "16n", undefined, 5)
+    },
+
+    /**
+     * Play a sound by name
+     * @param {string} name - The key of the sound
+     * @param {number} volume - Optional: Decibels (e.g., -10 to 10)
+     * @param {string|number} duration - Optional: Tone.js time (e.g., '4n', 0.5)
+     */
+    play(name, volume = 0, duration = null) {
+        if (this.library[name]) {
+            // Apply temporary volume if provided
+            const originalVolume = Tone.Destination.volume.value;
+            Tone.Destination.volume.rampTo(volume, 0.01);
+
+            this.library[name]();
+
+            // Reset volume after a short delay if it was changed
+            if (volume !== 0) {
+                setTimeout(() => Tone.Destination.volume.rampTo(originalVolume, 0.1), 500);
+            }
+        } else {
+            console.warn(`Sound "${name}" not found in library.`);
+        }
+    }
+};
+
+
+        async function startAudio() {
+            await Tone.start();
+            console.log("Audio is ready");
+            document.querySelector('.master-btn').innerText = "Audio Active ✅";
+        }
+
+        // Initialize the UI
+        const grid = document.getElementById('buttonGrid');
+        Object.keys(mySounds.library).forEach(soundName => {
+            const btn = document.createElement('button');
+            btn.innerText = soundName.toUpperCase();
+            btn.onclick = () => mySounds.play(soundName);
+            grid.appendChild(btn);
+        });
+    </script>
+</body>
+</html>
