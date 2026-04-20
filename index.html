@@ -111,7 +111,7 @@ const mySounds = {
         mySounds.synths.osc.set({oscillator: {type: "sine"}});
         mySounds.synths.osc.triggerAttackRelease("A1", "4n");
         mySounds.synths.noise.triggerAttackRelease("16n");
-    }
+    },
         
         shoot: () => mySounds.synths.osc.triggerAttackRelease("G4", "16n", undefined, -10).frequency.rampTo("C2", 0.1),
         laser: () => mySounds.synths.fm.triggerAttackRelease("C6", "32n").frequency.rampTo("G3", 0.05),
