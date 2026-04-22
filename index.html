@@ -1,197 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Tone.js Game Sound Library</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameZone Landing Page</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="static/css/glassmorphism.css" />
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 50px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; max-width: 800px; margin: 40px auto; }
-        button { 
-            padding: 15px; cursor: pointer; border: none; border-radius: 5px; 
-            background: #3498db; color: white; font-weight: bold; transition: 0.2s;
+      .game-glass-card {
+        position: relative;
+        min-height: 340px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+      }
+      .game-card-bg {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover;
+        opacity: 0.32;
+        z-index: 0;
+        transition: opacity 0.3s;
+      }
+      .game-glass-card:hover .game-card-bg {
+        opacity: 0.5;
+      }
+      .game-title, .game-desc, .play-btn {
+        position: relative;
+        z-index: 1;
+      }
+      @media (min-width: 992px) {
+        .game-glass-card {
+          min-height: 420px;
+          font-size: 1.15rem;
         }
-        button:hover { background: #2980b9; transform: scale(1.05); }
-        button:active { transform: scale(0.95); }
-        .master-btn { background: #2ecc71; padding: 20px 40px; font-size: 1.2em; margin-bottom: 20px; }
-        .master-btn:hover { background: #27ae60; }
-        p { opacity: 0.7; }
+      }
     </style>
-</head>
-<body>
+<style>
+      body {
+        background: linear-gradient(135deg, #1f1c2c, #928dab);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Segoe UI", sans-serif;
+      }
 
-    <h1>Game Sound Library</h1>
-    <p>Procedural Audio with Tone.js</p>
-    
-    <button class="master-btn" onclick="startAudio()">1. Start Audio Context</button>
-    
-    <div class="grid" id="buttonGrid">
+      .card {
+        /* height: 80vh; */
+        background-color: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(10px);
+        border: none;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        color: white;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      }
+
+      .card-body {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        gap: 0.25rem;
+      }
+
+      .card-body .game-btn {
+        flex: 1 1 0;
+        min-height: 0;
+        margin: 0;
+      }
+
+      .game-btn:hover {
+        transform: scale(1.05);
+
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        color: #fff;
+        text-decoration: none;
+        cursor: pointer;
+        background-color: inherit !important;
+      }
+
+      .game-btnk:checked {
+        background-color: inherit !important;
+      }
+
+      .game-btn {
+        position: relative;
+        margin: 0.25rem 0;
+        /* height: 4rem; */
+        padding: 0.75rem 2rem;
+        font-size: 1.25rem;
+        border-radius: 2rem;
+        transition: 0.3s ease;
+
+        overflow: hidden;
+        color: #fff;
+        z-index: 1;
+
+        aspect-ratio: 2 / 1;
+      }
+
+      .game-btn-bg {
+        position: absolute;
+
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.35;
+        z-index: 0;
+        transition: opacity 0.3s;
+      }
+
+      .game-btn:hover .game-btn-bg {
+        opacity: 0.55;
+      }
+
+      .game-btn span {
+        position: relative;
+        z-index: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container container-fluid card">
+      <h1 class="card-header mb-1">🎮GameZone</h1>
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/two-flies.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Two Flies</div>
+            <div class="game-desc">A quick reflex game: click the flies as fast as you can!</div>
+            <button class="play-btn" onclick="location.href='two_flies.html'">Play</button>
+          </div>
         </div>
-
-    <script>
-        // INSERT THE gameAudio.js CODE HERE
-        // (I am referencing the 'mySounds' object created above)
-
-const mySounds = {
-    // Internal synths for different types of sounds
-    synths: {
-        osc: new Tone.Synth().toDestination(),
-        fm: new Tone.FMSynth().toDestination(),
-        am: new Tone.AMSynth().toDestination(),
-        noise: new Tone.NoiseSynth({
-            noise: { type: "white" },
-            envelope: { attack: 0.005, decay: 0.1, sustain: 0 }
-        }).toDestination(),
-        poly: new Tone.PolySynth(Tone.Synth).toDestination()
-    },
-
-    // New variations for your library object
-
-    
-    // Definitions for 15+ game sounds
-    library: {
-
-        // --- SHOOT VARIATIONS ---
-    shoot_retro: () => {
-        // Classic 8-bit 'peu' sound using a triangle wave
-        const synth = new Tone.Synth({oscillator: {type: "triangle"}}).toDestination();
-        synth.triggerAttackRelease("E4", "32n");
-        synth.frequency.rampTo("C2", 0.05);
-    },
-    shoot_plasma: () => {
-        // High-pitched FM zap
-        mySounds.synths.fm.set({ modulationIndex: 10, harmonicity: 3 });
-        mySounds.synths.fm.triggerAttackRelease("A5", "32n");
-        mySounds.synths.fm.frequency.rampTo("G2", 0.08);
-    },
-    shoot_heavy: () => {
-        // Short burst of noise combined with a low frequency drop
-        mySounds.synths.noise.triggerAttackRelease("64n");
-        mySounds.synths.osc.triggerAttackRelease("C3", "16n", undefined, 5);
-        mySounds.synths.osc.frequency.rampTo("C1", 0.1);
-    },
-
-    // --- LASER VARIATIONS ---
-    laser_scifi: () => {
-        // A "wobble" laser using FM modulation
-        mySounds.synths.fm.triggerAttackRelease("C6", "8n");
-        mySounds.synths.fm.modulationIndex.rampTo(50, 0.1);
-        mySounds.synths.fm.frequency.exponentialRampTo("C4", 0.1);
-    },
-    laser_ricochet: () => {
-        // Fast upward sweep followed by a drop
-        mySounds.synths.osc.triggerAttackRelease("C4", "32n");
-        mySounds.synths.osc.frequency.setValueAtTime("C4", Tone.now());
-        mySounds.synths.osc.frequency.linearRampToValueAtTime("C7", Tone.now() + 0.02);
-        mySounds.synths.osc.frequency.linearRampToValueAtTime("C3", Tone.now() + 0.1);
-    },
-    laser_burst: () => {
-        // Pulsing high-freq amplitude modulation
-        mySounds.synths.am.triggerAttackRelease("G5", "16n");
-        mySounds.synths.am.frequency.rampTo("A6", 0.05);
-    },
-
-    // --- EXPLOSION VARIATIONS ---
-    explosion_distorted: () => {
-        // Uses "Brown" noise (bassier) with a slower decay
-        const boom = new Tone.NoiseSynth({
-            noise: { type: "brown" },
-            envelope: { attack: 0.01, decay: 1.5, sustain: 0 }
-        }).toDestination();
-        boom.triggerAttackRelease("2n");
-    },
-    explosion_shatter: () => {
-        // High-pass noise for a metallic/glassy explosion
-        const filter = new Tone.Filter(2000, "highpass").toDestination();
-        const noise = new Tone.NoiseSynth().connect(filter);
-        noise.triggerAttackRelease("4n");
-    },
-    explosion_impact: () => {
-        // A heavy "thud" using a fundamental sine wave + white noise
-        mySounds.synths.osc.set({oscillator: {type: "sine"}});
-        mySounds.synths.osc.triggerAttackRelease("A1", "4n");
-        mySounds.synths.noise.triggerAttackRelease("16n");
-    },
-        
-        shoot: () => mySounds.synths.osc.triggerAttackRelease("G4", "16n", undefined, -10).frequency.rampTo("C2", 0.1),
-        laser: () => mySounds.synths.fm.triggerAttackRelease("C6", "32n").frequency.rampTo("G3", 0.05),
-        jump: () => mySounds.synths.osc.triggerAttackRelease("A3", "16n").frequency.rampTo("A5", 0.1),
-        coin: () => {
-            mySounds.synths.osc.triggerAttackRelease("B5", "16n");
-            setTimeout(() => mySounds.synths.osc.triggerAttackRelease("E6", "8n"), 100);
-        },
-        explosion: () => {
-            const noise = new Tone.NoiseSynth({ noise: { type: "brown" }, envelope: { decay: 0.8 } }).toDestination();
-            noise.triggerAttackRelease("4n");
-        },
-        hurt: () => mySounds.synths.am.triggerAttackRelease("G2", "8n").frequency.rampTo("C1", 0.1),
-        powerup: () => {
-            const now = Tone.now();
-            mySounds.synths.osc.triggerAttackRelease("C4", "16n", now);
-            mySounds.synths.osc.triggerAttackRelease("E4", "16n", now + 0.1);
-            mySounds.synths.osc.triggerAttackRelease("G4", "16n", now + 0.2);
-            mySounds.synths.osc.triggerAttackRelease("C5", "8n", now + 0.3);
-        },
-        win1: () => mySounds.synths.poly.triggerAttackRelease(["C4", "E4", "G4", "C5"], "4n"),
-        lose: () => mySounds.synths.poly.triggerAttackRelease(["C3", "Eb3", "Ab2"], "2n").gray = true,
-        levelup: () => mySounds.synths.fm.triggerAttackRelease("C5", "8n").frequency.exponentialRampTo("C6", 0.5),
-        click: () => mySounds.synths.osc.triggerAttackRelease("C6", "64n"),
-        bounce: () => mySounds.synths.osc.triggerAttackRelease("G3", "16n").frequency.rampTo("G4", 0.05).rampTo("G3", 0.05),
-        teleport: () => mySounds.synths.fm.triggerAttackRelease("C3", "2n").modulationIndex.rampTo(50, 0.5),
-        footstep: () => {
-            mySounds.synths.noise.envelope.decay = 0.05;
-            mySounds.synths.noise.triggerAttackRelease("32n");
-        },
-        magic: () => {
-            const now = Tone.now();
-            ["C6", "E6", "G6", "B6"].forEach((note, i) => {
-                mySounds.synths.am.triggerAttackRelease(note, "32n", now + i * 0.05);
-            });
-        },
-        alarm: () => mySounds.synths.osc.triggerAttackRelease("C5", "8n", undefined).frequency.rampTo("C6", 0.2),
-        ui_back: () => mySounds.synths.osc.triggerAttackRelease("G4", "32n").frequency.rampTo("C4", 0.1),
-        stomp: () => mySounds.synths.am.triggerAttackRelease("F2", "16n", undefined, 5)
-    },
-
-    /**
-     * Play a sound by name
-     * @param {string} name - The key of the sound
-     * @param {number} volume - Optional: Decibels (e.g., -10 to 10)
-     * @param {string|number} duration - Optional: Tone.js time (e.g., '4n', 0.5)
-     */
-    play(name, volume = 0, duration = null) {
-        if (this.library[name]) {
-            // Apply temporary volume if provided
-            const originalVolume = Tone.Destination.volume.value;
-            Tone.Destination.volume.rampTo(volume, 0.01);
-
-            this.library[name]();
-
-            // Reset volume after a short delay if it was changed
-            if (volume !== 0) {
-                setTimeout(() => Tone.Destination.volume.rampTo(originalVolume, 0.1), 500);
-            }
-        } else {
-            console.warn(`Sound "${name}" not found in library.`);
-        }
-    }
-};
-
-
-        async function startAudio() {
-            await Tone.start();
-            console.log("Audio is ready");
-            document.querySelector('.master-btn').innerText = "Audio Active ✅";
-        }
-
-        // Initialize the UI
-        const grid = document.getElementById('buttonGrid');
-        Object.keys(mySounds.library).forEach(soundName => {
-            const btn = document.createElement('button');
-            btn.innerText = soundName.toUpperCase();
-            btn.onclick = () => mySounds.play(soundName);
-            grid.appendChild(btn);
-        });
-    </script>
-</body>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/bricks-gemini.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Bricks 1</div>
+            <div class="game-desc">Classic brick breaker with a twist. Destroy all the bricks!</div>
+            <button class="play-btn" onclick="location.href='bricks-gemini.html'">Play</button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/bricks.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Bricks 2</div>
+            <div class="game-desc">Another brick breaker variant. Can you beat your high score?</div>
+            <button class="play-btn" onclick="location.href='bricks.html'">Play</button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/car.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Race</div>
+            <div class="game-desc">Dodge obstacles and race to the finish line. Fast reflexes required!</div>
+            <button class="play-btn" onclick="location.href='car-race.html'">Play</button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/plane.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Bomb</div>
+            <div class="game-desc">Drop bombs and clear the targets. Precision and timing are key!</div>
+            <button class="play-btn" onclick="location.href='bomb-works2.html'">Play</button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/map-game.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Countries</div>
+            <div class="game-desc">Test your geography skills. Can you find all the countries?</div>
+            <button class="play-btn" onclick="location.href='map_game.html'">Play</button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/roulette.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Roulette</div>
+            <div class="game-desc">Try your luck at the roulette table. Place your bets!</div>
+            <button class="play-btn" onclick="location.href='roulette.html'">Play</button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/blackjack.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Blackjack</div>
+            <div class="game-desc">Beat the dealer in this classic card game of 21.</div>
+            <button class="play-btn" onclick="location.href='black-jack.html'">Play</button>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/go-fish.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Go Fish!</div>
+            <div class="game-desc">A fun card game for all ages. Collect the most sets to win!</div>
+            <button class="play-btn" onclick="location.href='fish.html'">Play</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
 </html>
