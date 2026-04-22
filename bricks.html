@@ -57,6 +57,7 @@
       align-items:center;
       justify-content:center;
       padding:0.5rem;
+      position:relative;
     }
     canvas#gameCanvas{
       width:100%;
@@ -74,6 +75,23 @@
     .small-btn{padding:0.25rem 0.5rem; font-size:0.85rem}
     /* helper for landscape tip */
     .hint {opacity:0.9; font-size:0.9rem}
+
+    .countdown-overlay{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:clamp(2.5rem, 6vw, 4.5rem);
+      font-weight:800;
+      color:#fff;
+      text-shadow:0 0 30px rgba(0,0,0,0.7);
+      letter-spacing:0.15em;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity 0.25s ease;
+    }
+    .countdown-overlay.show{opacity:1;}
 
     @media (min-width:900px){
       canvas#gameCanvas{ aspect-ratio: 16/9; }
@@ -101,7 +119,9 @@
     .game-layout {
         display: grid;
         grid-template-rows: var(--header-h) 1fr var(--footer-h);
-        height: 100vh;
+        /* height: 100vh; */
+        max-width: 900px;
+        max-height: 900px;
     }
 
     header, footer {
@@ -141,6 +161,8 @@
 </head>
 <body>
 
+  <div class="game-shell">
+
   <div class="game-layout">
     <header class="hud">
       <div class="left">
@@ -164,12 +186,15 @@
 
     <div class="stage-wrap canvas-wrapper">
       <canvas id="gameCanvas" width="540" height="960" aria-label="Brick Breaker game canvas"></canvas>
+      <div id="countdownOverlay" class="countdown-overlay"></div>
     </div>
 
     <footer class="d-flex justify-content-between align-items-center">
       <div class="hint panel p-2">Controls: drag or tap left/right to move paddle. Tilt device to steer.</div>
       <div class="panel p-2 small">10 levels</div>
     </footer>
+
+  </div>
 
   </div>
 
@@ -206,6 +231,7 @@ const CONFIG = {
 // ============== Canvas & Rendering Context ==============
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+const countdownOverlay = document.getElementById('countdownOverlay');
 let CANVAS_W = CONFIG.canvasBaseWidth;
 let CANVAS_H = CONFIG.canvasBaseHeight;
 
@@ -219,10 +245,10 @@ function fitCanvas() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   CANVAS_W = rect.width;
   CANVAS_H = rect.height;
+  if(state.countdownActive && state.ball){
+    positionBallForDrop();
+  }
 }
-window.addEventListener('resize', fitCanvas);
-fitCanvas();
-
 // ============== Game State ==============
 const state = {
   playing: false,
@@ -238,11 +264,77 @@ const state = {
   input: {x:0,down:false},
   muted: false,
   deviceTiltX:0,
+  countdownActive:false,
 };
+
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
 
 // ============== Utilities ==============
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function rand(a,b){return a + Math.random()*(b-a);} 
+
+let countdownInterval = null;
+let countdownTimeout = null;
+
+function clearCountdownTimers(){
+  if(countdownInterval){ clearInterval(countdownInterval); countdownInterval = null; }
+  if(countdownTimeout){ clearTimeout(countdownTimeout); countdownTimeout = null; }
+}
+
+function cancelCountdown(){
+  clearCountdownTimers();
+  countdownOverlay.classList.remove('show');
+  countdownOverlay.textContent = '';
+  state.countdownActive = false;
+}
+
+function positionBallForDrop(){
+  if(!state.ball) return;
+  const safeTop = CONFIG.topOffset + 60;
+  const maxY = CANVAS_H - 200;
+  const target = CANVAS_H * 0.45;
+  const dropY = clamp(target, safeTop, Math.max(safeTop + 40, maxY));
+  state.ball.x = CANVAS_W / 2;
+  state.ball.y = dropY;
+  state.ball.vx = 0;
+  state.ball.vy = 0;
+}
+
+function startCountdown(onComplete){
+  clearCountdownTimers();
+  countdownOverlay.classList.add('show');
+  let current = 3;
+  state.countdownActive = true;
+  countdownOverlay.textContent = current;
+  countdownInterval = setInterval(()=>{
+    current -= 1;
+    if(current > 0){
+      countdownOverlay.textContent = current;
+      return;
+    }
+    countdownOverlay.textContent = 'GO!';
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+    countdownTimeout = setTimeout(()=>{
+      countdownOverlay.classList.remove('show');
+      countdownOverlay.textContent = '';
+      countdownTimeout = null;
+      state.countdownActive = false;
+      if(typeof onComplete === 'function'){ onComplete(); }
+    }, 600);
+  }, 1000);
+}
+
+function queueBallDrop(){
+  positionBallForDrop();
+  startCountdown(()=>{
+    if(!state.playing) return;
+    const dropSpeed = Math.abs((state.ball && state.ball.speed) || 320);
+    state.ball.vx = 0;
+    state.ball.vy = dropSpeed;
+  });
+}
 
 // ============== Sound System (WebAudio) ==============
 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -276,11 +368,12 @@ function makeBall(level){
   const speed = 320 * CONFIG.levelSpeed(level); // logical px/sec tuned for base size
   return {
     x: CANVAS_W/2,
-    y: CANVAS_H*0.6,
-    vx: speed * (Math.random() > 0.5 ? 1 : -1) * 0.6,
-    vy: -speed,
+    y: CANVAS_H*0.5,
+    vx: 0,
+    vy: 0,
     r: Math.max(6, CONFIG.ballRadius * (1 - (level-1)*0.03)),
     color: 'white',
+    speed,
   };
 }
 
@@ -365,9 +458,11 @@ function resetLevel(toLevel){
   state.particles = [];
   document.getElementById('levelLabel').textContent = `Level ${toLevel}`;
   document.getElementById('score').textContent = state.score;
+  queueBallDrop();
 }
 
 function startGame(){
+  cancelCountdown();
   state.playing = true;
   state.paused = false;
   state.score = 0;
@@ -382,6 +477,7 @@ function nextLevel(){
   if(state.level >= CONFIG.totalLevels){
     // victory
     state.playing = false;
+    cancelCountdown();
     showOverlay(`You Win! Score: ${state.score}`);
     soundLevel();
     return;
@@ -397,11 +493,13 @@ function loseLife(){
   spawnParticles(state.ball.x, state.ball.y, 16, '#ff6b6b');
   if(state.lives <= 0){
     state.playing = false;
+    cancelCountdown();
     showOverlay(`Game Over — Score ${state.score}`);
     soundLose();
   } else {
     state.ball = makeBall(state.level);
     soundLife();
+    queueBallDrop();
   }
 }
 

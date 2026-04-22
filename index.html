@@ -8,6 +8,38 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="static/css/glassmorphism.css" />
+    <style>
+      .game-glass-card {
+        position: relative;
+        min-height: 340px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+      }
+      .game-card-bg {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        object-fit: cover;
+        opacity: 0.32;
+        z-index: 0;
+        transition: opacity 0.3s;
+      }
+      .game-glass-card:hover .game-card-bg {
+        opacity: 0.5;
+      }
+      .game-title, .game-desc, .play-btn {
+        position: relative;
+        z-index: 1;
+      }
+      @media (min-width: 992px) {
+        .game-glass-card {
+          min-height: 420px;
+          font-size: 1.15rem;
+        }
+      }
+    </style>
 <style>
       body {
         background: linear-gradient(135deg, #1f1c2c, #928dab);
@@ -98,80 +130,80 @@
   </head>
 
   <body>
-    <div class="container container-fluid card ">
+    <div class="container container-fluid card">
       <h1 class="card-header mb-1">🎮GameZone</h1>
-
-      <div class="row g-0">
-
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='two_flies.html'"
-        >
-          <img src="static/img/two-flies.jpg" alt="" class="game-btn-bg" />
-          <span>Two Flies</span>
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/two-flies.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Two Flies</div>
+            <div class="game-desc">A quick reflex game: click the flies as fast as you can!</div>
+            <button class="play-btn" onclick="location.href='two_flies.html'">Play</button>
+          </div>
         </div>
-
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='bricks-gemini.html'"
-        >
-          <img src="static/img/bricks-gemini.jpg" alt="" class="game-btn-bg" />
-          <span>Bricks 1</span>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/bricks-gemini.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Bricks 1</div>
+            <div class="game-desc">Classic brick breaker with a twist. Destroy all the bricks!</div>
+            <button class="play-btn" onclick="location.href='bricks-gemini.html'">Play</button>
+          </div>
         </div>
-
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='bricks.html'"
-        >
-          <img src="static/img/bricks.jpg" alt="" class="game-btn-bg" />
-          <span>Bricks 2</span>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/bricks.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Bricks 2</div>
+            <div class="game-desc">Another brick breaker variant. Can you beat your high score?</div>
+            <button class="play-btn" onclick="location.href='bricks.html'">Play</button>
+          </div>
         </div>
-
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='car-race.html'"
-        >
-          <img src="static/img/car.jpg" alt="" class="game-btn-bg" />
-          <span>Race</span>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/car.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Race</div>
+            <div class="game-desc">Dodge obstacles and race to the finish line. Fast reflexes required!</div>
+            <button class="play-btn" onclick="location.href='car-race.html'">Play</button>
+          </div>
         </div>
-
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='bomb-works2.html'"
-        >
-          <img src="static/img/plane.jpg" alt="" class="game-btn-bg" />
-          <span>Bomb</span>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/plane.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Bomb</div>
+            <div class="game-desc">Drop bombs and clear the targets. Precision and timing are key!</div>
+            <button class="play-btn" onclick="location.href='bomb-works2.html'">Play</button>
+          </div>
         </div>
-
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='map_game.html'"
-        >
-          <img src="static/img/map-game.jpg" alt="" class="game-btn-bg" />
-          <span>Countries</span>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/map-game.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Countries</div>
+            <div class="game-desc">Test your geography skills. Can you find all the countries?</div>
+            <button class="play-btn" onclick="location.href='map_game.html'">Play</button>
+          </div>
         </div>
-
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='roulette.html'"
-        >
-          <img src="static/img/roulette.jpg" alt="" class="game-btn-bg" />
-          <span>Roulette</span>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/roulette.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Roulette</div>
+            <div class="game-desc">Try your luck at the roulette table. Place your bets!</div>
+            <button class="play-btn" onclick="location.href='roulette.html'">Play</button>
+          </div>
         </div>
-
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='black-jack.html'"
-        >
-          <img src="static/img/blackjack.jpg" alt="" class="game-btn-bg" />
-          <span>Blackjack</span>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/blackjack.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Blackjack</div>
+            <div class="game-desc">Beat the dealer in this classic card game of 21.</div>
+            <button class="play-btn" onclick="location.href='black-jack.html'">Play</button>
+          </div>
         </div>
-        <div
-          class="col-12 col-md-6 btn game-btn"
-          onclick="location.href='fish.html'"
-        >
-          <img src="static/img/go-fish.jpg" alt="" class="game-btn-bg" />
-          <span>Go Fish!</span>
+        <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+          <div class="game-glass-card w-100">
+            <img src="static/img/go-fish.jpg" alt="" class="game-card-bg" />
+            <div class="game-title">Go Fish!</div>
+            <div class="game-desc">A fun card game for all ages. Collect the most sets to win!</div>
+            <button class="play-btn" onclick="location.href='fish.html'">Play</button>
+          </div>
         </div>
       </div>
     </div>
