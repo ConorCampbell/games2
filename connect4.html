@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Connect 4 Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg1: #081b33;
+      --bg2: #133f72;
+      --board: #0e4eb7;
+      --board-shadow: #0a3580;
+      --panel: rgba(255, 255, 255, 0.12);
+      --text: #f7fbff;
+      --red: #f95c53;
+      --yellow: #ffd24f;
+      --ok: #77f2a8;
+      --warn: #ffb86b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Nunito", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 18%, rgba(255, 255, 255, 0.2) 0, rgba(255, 255, 255, 0) 36%),
+        radial-gradient(circle at 90% 85%, rgba(255, 220, 120, 0.24) 0, rgba(255, 220, 120, 0) 42%),
+        linear-gradient(155deg, var(--bg1), var(--bg2));
+      display: flex;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app {
+      width: min(980px, 100%);
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr;
+    }
+
+    .top-bar {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.25);
+    }
+
+    .title {
+      font-family: "Bungee", sans-serif;
+      font-size: clamp(1.3rem, 4vw, 2rem);
+      letter-spacing: 0.06em;
+      margin: 0;
+      color: #fff4bd;
+      text-shadow: 0 4px 0 rgba(0, 0, 0, 0.25);
+      text-align: center;
+    }
+
+    .scoreboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .score-card {
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      font-weight: 900;
+      background: rgba(0, 0, 0, 0.25);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      min-height: 66px;
+    }
+
+    .score-card .name {
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    .score-card .value {
+      font-size: 1.7rem;
+      line-height: 1;
+    }
+
+    .score-card.red {
+      outline: 3px solid rgba(249, 92, 83, 0.3);
+    }
+
+    .score-card.yellow {
+      outline: 3px solid rgba(255, 210, 79, 0.35);
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .control {
+      display: grid;
+      gap: 6px;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    select,
+    button {
+      font-family: "Nunito", sans-serif;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      font-weight: 800;
+    }
+
+    select {
+      background: rgba(255, 255, 255, 0.95);
+      color: #17385d;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    button {
+      background: #f4f8ff;
+      color: #143763;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, #7cffb4, #42d99c);
+    }
+
+    button.warn {
+      background: linear-gradient(135deg, #ffd07f, #ffac56);
+    }
+
+    .status {
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      padding: 10px;
+      text-align: center;
+      font-weight: 800;
+      min-height: 45px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .board-wrap {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 16px;
+      padding: 8px;
+      box-shadow: 0 14px 45px rgba(0, 0, 0, 0.35);
+    }
+
+    #connect4Canvas {
+      width: 100%;
+      aspect-ratio: 7 / 6;
+      display: block;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #1d6be1, #0d429d);
+      touch-action: manipulation;
+    }
+
+    .hint {
+      text-align: center;
+      opacity: 0.9;
+      font-size: 0.92rem;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    @media (min-width: 900px) {
+      .app {
+        grid-template-columns: 320px 1fr;
+        align-items: start;
+      }
+
+      .top-bar {
+        position: sticky;
+        top: 12px;
+      }
+
+      .btn-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="top-bar">
+      <h1 class="title">Connect 4 Arena</h1>
+
+      <div class="scoreboard">
+        <div class="score-card red" id="scoreCard1">
+          <div class="name" id="player1Name">Red</div>
+          <div class="value" id="score1">0</div>
+        </div>
+        <div class="score-card yellow" id="scoreCard2">
+          <div class="name" id="player2Name">Yellow</div>
+          <div class="value" id="score2">0</div>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <label class="control" for="gameMode">
+          Mode
+          <select id="gameMode" aria-label="Game mode">
+            <option value="pvp">2 Players</option>
+            <option value="cpu">Vs Computer</option>
+          </select>
+        </label>
+
+        <label class="control" for="difficulty">
+          Computer
+          <select id="difficulty" aria-label="CPU difficulty">
+            <option value="easy">Easy</option>
+            <option value="medium" selected>Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button class="primary" id="newRoundBtn">New Round</button>
+        <button class="warn" id="resetScoreBtn">Reset Score</button>
+        <button id="audioBtn">Enable Sound</button>
+      </div>
+
+      <div class="status" id="statusText">Red to move</div>
+    </section>
+
+    <section class="board-wrap">
+      <canvas id="connect4Canvas" width="840" height="720" aria-label="Connect 4 board"></canvas>
+      <div class="hint">Click or tap a column to drop a disc</div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/tone@15.0.4/build/Tone.js"></script>
+  <script src="static/js/connect4.js"></script>
+</body>
+</html>
