@@ -4,6 +4,7 @@
   const EMPTY = 0;
   const RED = 1;
   const YELLOW = 2;
+  const SOUND_PREF_KEY = "connect4:soundEnabled";
 
   const COLORS = {
     boardA: "#1668d6",
@@ -28,6 +29,10 @@
     anim: null,
     hoverCol: -1,
     waitingForCpu: false,
+    nextStarter: RED,   // alternates each round in PvP
+    draining: false,
+    drainDiscs: [],
+    roundStarted: false,
   };
 
   const canvas = document.getElementById("connect4Canvas");
@@ -42,9 +47,11 @@
   const p2NameEl = document.getElementById("player2Name");
   const scoreCard1 = document.getElementById("scoreCard1");
   const scoreCard2 = document.getElementById("scoreCard2");
+  const boardOverlay = document.getElementById("boardOverlay");
   const newRoundBtn = document.getElementById("newRoundBtn");
   const resetScoreBtn = document.getElementById("resetScoreBtn");
-  const audioBtn = document.getElementById("audioBtn");
+  const audioToggle = document.getElementById("audioToggle");
+  const soundRow = document.getElementById("soundRow");
 
   const audio = {
     enabled: false,
@@ -52,7 +59,40 @@
     drop: null,
     win: null,
     ui: null,
+    coinPool: [],
   };
+
+  function readSoundPreference() {
+    try {
+      return localStorage.getItem(SOUND_PREF_KEY) === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function writeSoundPreference(enabled) {
+    try {
+      localStorage.setItem(SOUND_PREF_KEY, enabled ? "1" : "0");
+    } catch {
+      // Ignore storage failures in private/restricted contexts.
+    }
+  }
+
+  function updateAudioButton() {
+    audioToggle.checked = audio.enabled;
+    soundRow.classList.toggle("is-on", audio.enabled);
+  }
+
+  function updateOverlayVisibility() {
+    const show = !state.draining && (!state.roundStarted || state.gameOver);
+    boardOverlay.classList.toggle("visible", show);
+  }
+
+  function startActiveRound() {
+    state.roundStarted = true;
+    updateOverlayVisibility();
+    setStatus(`${playerName(state.currentPlayer)} to move`);
+  }
 
   function makeBoard() {
     return Array.from({ length: ROWS }, () => Array(COLS).fill(EMPTY));
@@ -125,20 +165,106 @@
 
   function resetRound() {
     state.board = makeBoard();
-    state.currentPlayer = RED;
+    // In PvP the first-mover alternates each round; CPU human always starts as Red
+    state.currentPlayer = state.mode === "pvp" ? state.nextStarter : RED;
+    if (state.mode === "pvp") {
+      state.nextStarter = state.nextStarter === RED ? YELLOW : RED;
+    }
     state.gameOver = false;
     state.winningCells = [];
     state.anim = null;
     state.waitingForCpu = false;
+    state.roundStarted = false;
     updateTurnIndicator();
-    setStatus(`${playerName(state.currentPlayer)} to move`);
+    updateOverlayVisibility();
+    setStatus(`Press Play - ${playerName(state.currentPlayer)} moves first`);
     draw();
   }
 
   function resetScores() {
     state.scores[RED] = 0;
     state.scores[YELLOW] = 0;
+    state.nextStarter = RED;
     updateScores();
+  }
+
+  // Animate all discs falling out of the board column-by-column, then invoke callback.
+  function drainBoard(callback) {
+    const g = boardGeometry();
+    const floorY = g.oy + g.bh + g.cell;
+    const discs = [];
+
+    for (let c = 0; c < COLS; c += 1) {
+      let rank = 0; // 0 = bottom-most occupied cell in this column
+      for (let r = ROWS - 1; r >= 0; r -= 1) {
+        if (state.board[r][c] !== EMPTY) {
+          const { x, y } = discCenter(r, c, g);
+          discs.push({
+            x,
+            y,
+            vy: 0,
+            col: c,
+            player: state.board[r][c],
+            // columns stagger left-to-right; within a column the bottom disc falls first
+            startDelay: c * 55 + rank * 42,
+            started: false,
+            done: false,
+          });
+          rank += 1;
+        }
+      }
+    }
+
+    if (discs.length === 0) {
+      state.draining = false;
+      updateOverlayVisibility();
+      callback();
+      return;
+    }
+
+    // Clear live board and any in-flight animation immediately
+    state.board = makeBoard();
+    state.anim = null;
+    state.winningCells = [];
+    state.draining = true;
+    state.drainDiscs = discs;
+    updateOverlayVisibility();
+
+    scheduleDrainSounds(discs);
+
+    const gravity = g.cell * 0.055; // scales with board size
+    const begin = performance.now();
+
+    function step(now) {
+      if (!state.draining) return;
+
+      const elapsed = now - begin;
+      let allDone = true;
+
+      for (const disc of state.drainDiscs) {
+        if (disc.done) continue;
+        allDone = false;
+        if (elapsed < disc.startDelay) continue;
+        disc.started = true;
+        disc.vy += gravity;
+        disc.y += disc.vy;
+        if (disc.y > floorY) disc.done = true;
+      }
+
+      draw();
+
+      if (allDone) {
+        state.draining = false;
+        state.drainDiscs = [];
+        updateOverlayVisibility();
+        callback();
+        return;
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
   }
 
   function checkWin(board, player) {
@@ -282,6 +408,19 @@
       drawDisc(center.x, state.anim.y, g.radius * 0.95, state.anim.player, false);
     }
 
+    // Drain discs — clipped to board bounds so they vanish at the bottom edge
+    if (state.draining && state.drainDiscs.length > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(g.ox, g.oy, g.bw, g.bh);
+      ctx.clip();
+      for (const disc of state.drainDiscs) {
+        if (!disc.started || disc.done) continue;
+        drawDisc(disc.x, disc.y, g.radius * 0.95, disc.player, false);
+      }
+      ctx.restore();
+    }
+
     ctx.lineWidth = 2;
     ctx.strokeStyle = COLORS.line;
     for (let c = 0; c <= COLS; c += 1) {
@@ -313,7 +452,7 @@
   }
 
   function canHumanMove() {
-    if (state.gameOver || state.anim || state.waitingForCpu) return false;
+    if (!state.roundStarted || state.gameOver || state.anim || state.waitingForCpu || state.draining) return false;
     if (state.mode === "cpu" && state.currentPlayer === YELLOW) return false;
     return true;
   }
@@ -365,6 +504,21 @@
     audio.ui.triggerAttackRelease("D5", "32n", Tone.now(), 0.3);
   }
 
+  // Fire each coin-clink at the right moment via setTimeout so no Tone scheduling conflicts.
+  // One voice per column keeps triggers sequential within each column.
+  function scheduleDrainSounds(discs) {
+    if (!audio.enabled || !audio.ready || !audio.coinPool.length) return;
+    discs.forEach((disc) => {
+      window.setTimeout(() => {
+        if (!audio.enabled) return;
+        const synth = audio.coinPool[disc.col % audio.coinPool.length];
+        // Randomise pitch slightly each time for a natural coin sound
+        synth.frequency.value = 320 + disc.col * 28 + Math.random() * 60;
+        synth.triggerAttackRelease("32n", Tone.now(), 0.45);
+      }, disc.startDelay);
+    });
+  }
+
   function playWinSound(player) {
     if (!audio.enabled || !audio.ready || !audio.win) return;
     const now = Tone.now();
@@ -375,7 +529,8 @@
 
   async function enableAudio() {
     if (!window.Tone) {
-      audioBtn.textContent = "Tone.js missing";
+      audio.enabled = false;
+      updateAudioButton();
       return;
     }
 
@@ -397,11 +552,30 @@
         envelope: { attack: 0.001, decay: 0.07, sustain: 0.01, release: 0.05 },
       }).toDestination();
 
+      // Seven MetalSynth voices — one per column — so drain sounds never voice-steal
+      for (let i = 0; i < 7; i += 1) {
+        audio.coinPool.push(
+          new Tone.MetalSynth({
+            frequency: 400,
+            envelope: { attack: 0.001, decay: 0.09, release: 0.06 },
+            harmonicity: 5.1,
+            modulationIndex: 16,
+            resonance: 3200,
+            octaves: 1.5,
+            volume: -14,
+          }).toDestination()
+        );
+      }
+
       audio.ready = true;
     }
+  }
 
-    audio.enabled = true;
-    audioBtn.textContent = "Sound Enabled";
+  async function syncAudioFromPreference() {
+    if (audio.enabled && !audio.ready) {
+      await enableAudio();
+    }
+    updateAudioButton();
   }
 
   function doMove(col) {
@@ -426,14 +600,16 @@
       updateScores();
       updateTurnIndicator();
       playWinSound(player);
-      setStatus(`${playerName(player)} wins! Press New Round to continue.`);
+      setStatus(`${playerName(player)} wins! Press Play to continue.`);
+      updateOverlayVisibility();
       return;
     }
 
     if (isBoardFull(state.board)) {
       state.gameOver = true;
       state.winningCells = [];
-      setStatus("Draw game. Press New Round for a rematch.");
+      setStatus("Draw game. Press Play for a rematch.");
+      updateOverlayVisibility();
       return;
     }
 
@@ -646,11 +822,13 @@
 
   function onPointerDown(event) {
     event.preventDefault();
+    void syncAudioFromPreference();
     const col = columnFromPointer(event.clientX);
     if (col >= 0) doMove(col);
   }
 
   function onCanvasClick(event) {
+    void syncAudioFromPreference();
     const col = columnFromPointer(event.clientX);
     if (col >= 0) doMove(col);
   }
@@ -695,23 +873,45 @@
     });
 
     newRoundBtn.addEventListener("click", () => {
+      if (state.draining) return;
       playUiSound();
-      resetRound();
+      const hasDiscs = state.board.some((row) => row.some((cell) => cell !== EMPTY));
+      if (!state.roundStarted && !hasDiscs) {
+        startActiveRound();
+        return;
+      }
+      drainBoard(() => {
+        resetRound();
+        startActiveRound();
+      });
     });
 
     resetScoreBtn.addEventListener("click", () => {
+      if (state.draining) return;
       playUiSound();
-      resetScores();
-      resetRound();
+      const hasDiscs = state.board.some((row) => row.some((cell) => cell !== EMPTY));
+      const afterReset = () => {
+        resetScores();
+        resetRound();
+      };
+      if (!hasDiscs) {
+        afterReset();
+        return;
+      }
+      drainBoard(afterReset);
     });
 
-    audioBtn.addEventListener("click", async () => {
-      await enableAudio();
+    audioToggle.addEventListener("change", async () => {
+      audio.enabled = audioToggle.checked;
+      writeSoundPreference(audio.enabled);
+      await syncAudioFromPreference();
       playUiSound();
     });
   }
 
   function init() {
+    audio.enabled = readSoundPreference();
+    updateAudioButton();
     bindEvents();
     state.mode = gameModeEl.value;
     state.difficulty = difficultyEl.value;
@@ -719,8 +919,9 @@
     updateNames();
     updateScores();
     updateTurnIndicator();
+    updateOverlayVisibility();
     resizeCanvasToDisplay();
-    setStatus(`${playerName(state.currentPlayer)} to move`);
+    setStatus(`Press Play - ${playerName(state.currentPlayer)} moves first`);
   }
 
   init();

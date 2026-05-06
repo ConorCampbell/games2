@@ -128,10 +128,89 @@
       color: #17385d;
     }
 
-    .btn-row {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
+    .sound-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+
+    .sound-label {
+      font-size: 0.92rem;
+      font-weight: 800;
+      opacity: 0.9;
+    }
+
+    .sound-icon {
+      font-size: 1rem;
+      line-height: 1;
+      opacity: 0.55;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .sound-row.is-on .sound-icon.on {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+
+    .sound-row:not(.is-on) .sound-icon.off {
+      opacity: 1;
+      transform: scale(1.08);
+    }
+
+    .sound-switch {
+      position: relative;
+      width: 64px;
+      height: 34px;
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .sound-switch input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .sound-slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #5a6e90, #364c6f);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      transition: background 0.25s ease;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35);
+    }
+
+    .sound-slider::before {
+      content: "";
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      top: 3px;
+      left: 3px;
+      border-radius: 50%;
+      background: #f7fbff;
+      transition: transform 0.25s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    .sound-switch input:checked + .sound-slider {
+      background: linear-gradient(135deg, #87f6bc, #3ed38f);
+    }
+
+    .sound-switch input:checked + .sound-slider::before {
+      transform: translateX(30px);
+    }
+
+    .sound-switch input:focus-visible + .sound-slider {
+      outline: 3px solid rgba(255, 255, 255, 0.55);
+      outline-offset: 2px;
     }
 
     button {
@@ -173,11 +252,58 @@
     }
 
     .board-wrap {
+      position: relative;
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
       border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 16px;
       padding: 8px;
       box-shadow: 0 14px 45px rgba(0, 0, 0, 0.35);
+    }
+
+    .board-overlay {
+      position: absolute;
+      inset: 8px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(3, 10, 26, 0.35);
+      backdrop-filter: blur(2px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      z-index: 3;
+    }
+
+    .board-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overlay-card {
+      width: min(340px, 90%);
+      background: rgba(14, 33, 70, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
+    }
+
+    .overlay-title {
+      margin: 0;
+      text-align: center;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      color: #fff4bd;
+      font-size: 1.02rem;
+    }
+
+    .overlay-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
 
     #connect4Canvas {
@@ -208,8 +334,19 @@
         top: 12px;
       }
 
-      .btn-row {
+    }
+
+    @media (max-width: 520px) {
+      .overlay-buttons {
         grid-template-columns: 1fr;
+      }
+
+      .overlay-card {
+        width: min(300px, 92%);
+      }
+
+      .sound-row {
+        justify-content: space-between;
       }
     }
   </style>
@@ -249,10 +386,14 @@
         </label>
       </div>
 
-      <div class="btn-row">
-        <button class="primary" id="newRoundBtn">New Round</button>
-        <button class="warn" id="resetScoreBtn">Reset Score</button>
-        <button id="audioBtn">Enable Sound</button>
+      <div class="sound-row" id="soundRow">
+        <span class="sound-label">Sound</span>
+        <span class="sound-icon off" aria-hidden="true">🔇</span>
+        <label class="sound-switch" for="audioToggle" aria-label="Toggle sound">
+          <input type="checkbox" id="audioToggle" />
+          <span class="sound-slider"></span>
+        </label>
+        <span class="sound-icon on" aria-hidden="true">🔊</span>
       </div>
 
       <div class="status" id="statusText">Red to move</div>
@@ -260,6 +401,15 @@
 
     <section class="board-wrap">
       <canvas id="connect4Canvas" width="840" height="720" aria-label="Connect 4 board"></canvas>
+      <div class="board-overlay" id="boardOverlay" aria-live="polite">
+        <div class="overlay-card">
+          <p class="overlay-title">Round Controls</p>
+          <div class="overlay-buttons">
+            <button class="primary" id="newRoundBtn">Play</button>
+            <button class="warn" id="resetScoreBtn">Restart</button>
+          </div>
+        </div>
+      </div>
       <div class="hint">Click or tap a column to drop a disc</div>
     </section>
   </main>
