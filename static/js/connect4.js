@@ -230,6 +230,9 @@
     state.drainDiscs = discs;
     updateOverlayVisibility();
 
+    
+    // console.log(`Draining ${discs.length} discs with gravity ${gravity.toFixed(2)}`);
+
     scheduleDrainSounds(discs);
 
     const gravity = g.cell * 0.055; // scales with board size
@@ -506,18 +509,45 @@
 
   // Fire each coin-clink at the right moment via setTimeout so no Tone scheduling conflicts.
   // One voice per column keeps triggers sequential within each column.
+  // function scheduleDrainSounds(discs) {
+  //   if (!audio.enabled || !audio.ready || !audio.coinPool.length) return;
+  //   discs.forEach((disc) => {
+  //     window.setTimeout(() => {
+
+  //       console.log(`Playing drain sound for disc in column ${disc.col} at time ${((performance.now()) / 1000).toFixed(2)}s (scheduled delay ${disc.startDelay}ms)`);
+
+  //       if (!audio.enabled) return;
+  //       const synth = audio.coinPool[disc.col % audio.coinPool.length];
+  //       // Randomise pitch slightly each time for a natural coin sound
+        
+  //       console.log(`Setting frequency to ${320 + disc.col * 28} + random(0, 60)`);
+
+  //       synth.frequency.value = 320 + disc.col * 28 + Math.random() * 60;
+  //       synth.triggerAttackRelease("32n", Tone.now(), 0.45);
+  //     }, disc.startDelay);
+  //   });
+  // }
+
+
   function scheduleDrainSounds(discs) {
-    if (!audio.enabled || !audio.ready || !audio.coinPool.length) return;
-    discs.forEach((disc) => {
-      window.setTimeout(() => {
-        if (!audio.enabled) return;
-        const synth = audio.coinPool[disc.col % audio.coinPool.length];
-        // Randomise pitch slightly each time for a natural coin sound
-        synth.frequency.value = 320 + disc.col * 28 + Math.random() * 60;
-        synth.triggerAttackRelease("32n", Tone.now(), 0.45);
-      }, disc.startDelay);
-    });
-  }
+  if (!audio.enabled || !audio.ready || !audio.coinPool.length) return;
+
+  discs.forEach((disc) => {
+    window.setTimeout(() => {
+      if (!audio.enabled) return;
+
+      const synth = audio.coinPool[disc.col % audio.coinPool.length];
+      
+      // 1. Calculate the frequency
+      const calculatedFreq = 320 + disc.col * 28 + Math.random() * 60;
+      
+      // 2. Trigger the synth correctly
+      // Usage: triggerAttackRelease(frequency, duration, time, velocity)
+      synth.triggerAttackRelease(calculatedFreq, "32n", Tone.now(), 0.5);
+
+    }, disc.startDelay);
+  });
+}
 
   function playWinSound(player) {
     if (!audio.enabled || !audio.ready || !audio.win) return;
@@ -556,13 +586,13 @@
       for (let i = 0; i < 7; i += 1) {
         audio.coinPool.push(
           new Tone.MetalSynth({
-            frequency: 400,
-            envelope: { attack: 0.001, decay: 0.09, release: 0.06 },
+            frequency: 350,
+            envelope: { attack: 0.001, decay: 0.35, release: 0.25 },
             harmonicity: 5.1,
             modulationIndex: 16,
             resonance: 3200,
             octaves: 1.5,
-            volume: -14,
+            volume: -5,
           }).toDestination()
         );
       }
@@ -874,6 +904,9 @@
 
     newRoundBtn.addEventListener("click", () => {
       if (state.draining) return;
+
+      Tone.start(); // Ensure audio context is running before playing sound
+
       playUiSound();
       const hasDiscs = state.board.some((row) => row.some((cell) => cell !== EMPTY));
       if (!state.roundStarted && !hasDiscs) {
