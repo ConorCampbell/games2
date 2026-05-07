@@ -23,7 +23,7 @@
     currentPlayer: RED,
     gameOver: false,
     mode: "pvp",
-    difficulty: "medium",
+    difficulty: "3",
     scores: { [RED]: 0, [YELLOW]: 0 },
     winningCells: [],
     anim: null,
@@ -60,6 +60,7 @@
     win: null,
     ui: null,
     coinPool: [],
+    coinThunkPool: [],
   };
 
   function readSoundPreference() {
@@ -92,6 +93,7 @@
     state.roundStarted = true;
     updateOverlayVisibility();
     setStatus(`${playerName(state.currentPlayer)} to move`);
+    maybeStartCpuTurn();
   }
 
   function makeBoard() {
@@ -165,11 +167,9 @@
 
   function resetRound() {
     state.board = makeBoard();
-    // In PvP the first-mover alternates each round; CPU human always starts as Red
-    state.currentPlayer = state.mode === "pvp" ? state.nextStarter : RED;
-    if (state.mode === "pvp") {
-      state.nextStarter = state.nextStarter === RED ? YELLOW : RED;
-    }
+    state.currentPlayer = state.nextStarter;
+    state.nextStarter = state.nextStarter === RED ? YELLOW : RED;
+
     state.gameOver = false;
     state.winningCells = [];
     state.anim = null;
@@ -530,24 +530,25 @@
 
 
   function scheduleDrainSounds(discs) {
-  if (!audio.enabled || !audio.ready || !audio.coinPool.length) return;
+    if (!audio.enabled || !audio.ready || !audio.coinPool.length) return;
 
-  discs.forEach((disc) => {
-    window.setTimeout(() => {
-      if (!audio.enabled) return;
+    discs.forEach((disc) => {
+      window.setTimeout(() => {
+        if (!audio.enabled) return;
 
-      const synth = audio.coinPool[disc.col % audio.coinPool.length];
-      
-      // 1. Calculate the frequency
-      const calculatedFreq = 320 + disc.col * 28 + Math.random() * 60;
-      
-      // 2. Trigger the synth correctly
-      // Usage: triggerAttackRelease(frequency, duration, time, velocity)
-      synth.triggerAttackRelease(calculatedFreq, "32n", Tone.now(), 0.5);
-
-    }, disc.startDelay);
-  });
-}
+        const synth = audio.coinPool[disc.col % audio.coinPool.length];
+        const thunkSynth = audio.coinThunkPool[disc.col % audio.coinThunkPool.length];
+        const now = Tone.now();
+        const calculatedFreq = 165 + disc.col * 12 + Math.random() * 22;
+        const thunkFreq = 68 + Math.random() * 18;
+        const velocity = 0.32 + Math.random() * 0.12;
+        synth.triggerAttackRelease(calculatedFreq, 0.24, now, velocity);
+        if (thunkSynth) {
+          thunkSynth.triggerAttackRelease(thunkFreq, 0.34, now + 0.018, velocity * 0.9);
+        }
+      }, disc.startDelay);
+    });
+  }
 
   function playWinSound(player) {
     if (!audio.enabled || !audio.ready || !audio.win) return;
@@ -555,6 +556,25 @@
     const chord = player === RED ? ["C4", "E4", "G4", "C5"] : ["D4", "F4", "A4", "D5"];
     audio.win.triggerAttackRelease(chord, "4n", now, 0.9);
     audio.win.triggerAttackRelease([chord[2], chord[3]], "2n", now + 0.28, 0.7);
+  }
+
+  function maybeStartCpuTurn() {
+    if (state.mode !== "cpu" || state.currentPlayer !== YELLOW || state.gameOver || state.anim || state.waitingForCpu) {
+      return;
+    }
+
+    state.waitingForCpu = true;
+    window.setTimeout(() => {
+      if (state.gameOver) {
+        state.waitingForCpu = false;
+        return;
+      }
+      const cpuCol = chooseCpuMove();
+      state.waitingForCpu = false;
+      if (cpuCol >= 0) {
+        doCpuMove(cpuCol);
+      }
+    }, cpuThinkDelayMs());
   }
 
   async function enableAudio() {
@@ -586,13 +606,23 @@
       for (let i = 0; i < 7; i += 1) {
         audio.coinPool.push(
           new Tone.MetalSynth({
-            frequency: 350,
-            envelope: { attack: 0.001, decay: 0.35, release: 0.25 },
-            harmonicity: 5.1,
-            modulationIndex: 16,
-            resonance: 3200,
-            octaves: 1.5,
-            volume: -5,
+            frequency: 180,
+            envelope: { attack: 0.001, decay: 0.75, release: 0.55 },
+            harmonicity: 2.4,
+            modulationIndex: 8,
+            resonance: 1400,
+            octaves: 0.9,
+            volume: -10,
+          }).toDestination()
+        );
+
+        audio.coinThunkPool.push(
+          new Tone.MembraneSynth({
+            pitchDecay: 0.012,
+            octaves: 0.6,
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.001, decay: 0.22, sustain: 0.02, release: 0.28 },
+            volume: -36,
           }).toDestination()
         );
       }
@@ -647,20 +677,7 @@
     updateTurnIndicator();
     setStatus(`${playerName(state.currentPlayer)} to move`);
 
-    if (state.mode === "cpu" && state.currentPlayer === YELLOW) {
-      state.waitingForCpu = true;
-      window.setTimeout(() => {
-        if (state.gameOver) {
-          state.waitingForCpu = false;
-          return;
-        }
-        const cpuCol = chooseCpuMove();
-        state.waitingForCpu = false;
-        if (cpuCol >= 0) {
-          doCpuMove(cpuCol);
-        }
-      }, 260);
-    }
+    maybeStartCpuTurn();
   }
 
   function doCpuMove(col) {
@@ -799,37 +816,85 @@
     return cols[0];
   }
 
+  function difficultyLevel() {
+    const parsed = Number.parseInt(String(state.difficulty), 10);
+    if (parsed >= 1 && parsed <= 6) return parsed;
+    // Backward compatibility if an old value sneaks in.
+    if (state.difficulty === "easy") return 2;
+    if (state.difficulty === "medium") return 3;
+    if (state.difficulty === "hard") return 6;
+    return 3;
+  }
+
+  function cpuThinkDelayMs() {
+    const level = difficultyLevel();
+    const delays = {
+      1: [920, 180],
+      2: [780, 150],
+      3: [640, 120],
+      4: [520, 90],
+      5: [400, 60],
+      6: [280, 40],
+    };
+    const [base, jitter] = delays[level] ?? delays[3];
+    return base + Math.round(Math.random() * jitter);
+  }
+
+  function chooseSafePreferredMove(valid) {
+    const prefer = valid.slice().sort((a, b) => Math.abs(3 - a) - Math.abs(3 - b));
+    for (const col of prefer) {
+      const test = cloneBoard(state.board);
+      dropOnBoard(test, col, YELLOW);
+      const redImmediate = findImmediateWin(test, RED);
+      if (redImmediate < 0) return col;
+    }
+    return prefer[0] ?? -1;
+  }
+
   function chooseCpuMove() {
     const valid = availableColumns(state.board);
     if (valid.length === 0) return -1;
 
-    if (state.difficulty === "easy") {
-      if (Math.random() < 0.35) {
-        return weightedRandom(valid);
-      }
+    const level = difficultyLevel();
+
+    // Level 1: mostly random with a tiny center preference.
+    if (level === 1) {
+      if (Math.random() < 0.2) return weightedRandom(valid);
       return valid[Math.floor(Math.random() * valid.length)];
     }
 
     const winning = findImmediateWin(state.board, YELLOW);
-    if (winning >= 0) return winning;
+    // From level 2 onward, always finish immediate wins.
+    if (level >= 2 && winning >= 0) return winning;
 
     const block = findImmediateWin(state.board, RED);
-    if (block >= 0) return block;
-
-    if (state.difficulty === "medium") {
-      const prefer = valid.slice().sort((a, b) => Math.abs(3 - a) - Math.abs(3 - b));
-      for (const col of prefer) {
-        const test = cloneBoard(state.board);
-        dropOnBoard(test, col, YELLOW);
-
-        const redImmediate = findImmediateWin(test, RED);
-        if (redImmediate < 0) return col;
-      }
-      return prefer[0];
+    // Level 2 blocks only sometimes; level 3+ blocks consistently.
+    if (block >= 0) {
+      if (level >= 3) return block;
+      if (Math.random() < 0.45) return block;
     }
 
-    const hard = minimax(cloneBoard(state.board), 5, -Infinity, Infinity, true);
-    if (hard.col >= 0) return hard.col;
+    if (level === 2) {
+      return weightedRandom(valid);
+    }
+
+    if (level === 3) {
+      if (Math.random() < 0.7) return chooseSafePreferredMove(valid);
+      return weightedRandom(valid);
+    }
+
+    if (level === 4) {
+      return chooseSafePreferredMove(valid);
+    }
+
+    if (level === 5) {
+      const strategic = minimax(cloneBoard(state.board), 3, -Infinity, Infinity, true);
+      if (strategic.col >= 0) return strategic.col;
+      return chooseSafePreferredMove(valid);
+    }
+
+    const nightmare = minimax(cloneBoard(state.board), 5, -Infinity, Infinity, true);
+    if (nightmare.col >= 0) return nightmare.col;
 
     return weightedRandom(valid);
   }
